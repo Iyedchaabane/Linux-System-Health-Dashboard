@@ -204,7 +204,7 @@ Rules:
 - Status colors (`ok`, `warn`, `critical`, `info`) are derived **per theme** to pass contrast on that theme's surfaces. `critical` must never reuse the secondary pink, so a brand accent is not mistaken for an alert.
 - Status is never color-only: icon + text label always (`ui-design-system` section 6).
 - Verify every derived pair with the automated contrast test for **both** themes.
-- **Open question for the user**: the "Light Theme" background `#6F4E37` renders as a dark brown theme, with light text. If the intent was a light page (for example platinum `#E5E4E2` as the background with brown as an accent), say so before the Frontend Specialist builds it. Until confirmed, implement the values literally.
+**Decision (2026-10-25)**: The Light Theme uses **platinum `#E5E4E2` as the page background** with dark text (`#6F4E37` as primary accent, 5.86:1 contrast). The lavender `#E6E0F0` is a subtle surface tint. This makes "light" an actual light page. The brown `#6F4E37` is repurposed as the primary accent color for the light theme.
 
 ## Files Created
 
@@ -214,3 +214,14 @@ This project was initialized with the following OpenCode configuration:
 - `.opencode/agents/` - Agent configuration files (one per role above; tool permissions should match: Reviewer read-only, Orchestrator no source edits)
 - `.opencode/skills/<skill-name>/SKILL.md` - The six skills: `linux-monitoring`, `python-backend`, `realtime-websocket`, `react-dashboard`, `ui-design-system`, `testing-quality`
 - `.opencode/commands/` - Reusable project commands (suggested: `/check` runs the default test and lint tiers, `/review` invokes the Reviewer, `/contract-check` validates fixtures against schemas)
+## Tooling Decisions
+
+**Package Managers**
+- Python: **uv** (pyproject.toml native, lockfile, fast resolution)
+- Node: **npm** (standard, works with Vitest/Playwright without extra config)
+
+**Minimum Runtime Versions**
+- Python: **3.11+** (required for `asyncio.TaskGroup`, `except*` exception groups, `tomllib`)
+- Node: **20+** (current LTS at project start; Vite, Vitest, Playwright supported)
+
+These are recorded here so all agents use the same tooling. Changing them requires approval (AGENTS.md approval gates).
