@@ -1,16 +1,20 @@
 ---
-agent_id: testing-qa
-name: Testing Specialist
 description: Designs, implements, and validates backend, frontend, integration, and end-to-end tests for the Linux System Health Dashboard
 mode: subagent
-model: opencode/nemotron-3-ultra-free
+temperature: 0.1
 permission:
   edit: ask
   bash:
-    - pytest*
-    - ruff*
-    - npm run test*
-    - npm run lint*
+    "*": ask
+    "rm *": deny
+    "sudo *": deny
+    "pip *": deny
+    "git status*": allow
+    "git diff*": allow
+    "pytest*": allow
+    "ruff*": allow
+    "npm run test*": allow
+    "npm run lint*": allow
 ---
 
 # Testing and QA Specialist

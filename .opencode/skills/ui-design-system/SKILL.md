@@ -81,28 +81,43 @@ Enforcement:
 - Stylelint / ESLint rule banning hex, `rgb(`, `hsl(` and arbitrary Tailwind values (`bg-[#...]`, `w-[13px]`) outside `theme/tokens/`.
 - Tailwind preset **replaces** (not extends) the default palette, so off-system colors cannot be typed by accident.
 
-## 5. Color tokens (contrast verified)
+## 5. Color tokens (brand-anchored, contrast verified)
 
-Ratios below were computed with the WCAG 2.x formula against the stated background. Re-verify in CI if any value changes.
+**Fixed brand inputs from the user (never change without approval):**
+Dark theme: background `#0A0A0A`, primary `#007BA7`, secondary `#FF2D95`.
+Light theme: background `#E5E4E2` (platinum, decided), brown `#6F4E37` and lavender `#E6E0F0` as the accent colors.
 
-| Token | Light value | Contrast on `bg` / `surface` | Dark value | Contrast on `bg` / `surface` |
-|-------|-------------|------------------------------|------------|------------------------------|
-| `bg` | `255 255 255` | - | `2 6 23` | - |
-| `surface` | `248 250 252` | - | `15 23 42` | - |
-| `text` | `15 23 42` | 17.9 / 17.1 | `226 232 240` | 16.4 / 14.5 |
-| `muted` (secondary text) | `71 85 105` | 7.6 / 7.2 | `148 163 184` | 7.9 / 7.0 |
-| `ok` | `22 101 52` | 7.1 / 6.8 | `74 222 128` | 11.6 / 10.3 |
-| `warn` | `146 64 14` | 7.1 / 6.8 | `251 191 36` | 12.1 / 10.7 |
-| `critical` | `153 27 27` | 8.3 / 7.9 | `248 113 113` | 7.3 / 6.5 |
-| `info` | `14 116 144` | 5.4 / 5.1 | `34 211 238` | 11.2 / 9.9 |
-| `accent` | `29 78 216` | 6.7 / 6.4 | `96 165 250` | 7.9 / 7.0 |
-| `border-strong` (inputs, focusable boundaries) | `100 116 139` | 4.8 / 4.6 | `100 116 139` | 4.2 / 3.8 |
-| `border-subtle` (decorative dividers only) | `203 213 225` | decorative | `30 41 59` | decorative |
-| `focus-ring` | `29 78 216` | 6.7 | `147 197 253` | 11.2 |
+**Assumption to confirm:** in the light theme, brown is the primary accent and lavender is a tint (selected rows, hover surfaces) because lavender on platinum is only 1.01:1 and cannot carry text or icons. The secondary *accent* for text and icons is a derived deeper purple (`#5B4B8A`).
 
-Requirements: text at least 4.5:1 (large text 3:1); UI boundaries, icons and chart marks at least 3:1.
+Everything else below is **derived** around the brand values. Ratios were computed with the WCAG 2.x formula; re-verify in CI if any value changes. Write colors as `R G B` triples in CSS (so Tailwind alpha works); hex is shown here for readability.
 
-Status tints (backgrounds for badges/banners): `rgb(var(--color-ok) / 0.12)` over `surface`. Text on a tint must still pass 4.5:1 and is **tested**, not assumed.
+| Token | Light | Contrast on `bg` / `surface` | Dark | Contrast on `bg` / `surface` |
+|-------|-------|------------------------------|------|------------------------------|
+| `bg` | `#E5E4E2` (brand) | - | `#0A0A0A` (brand) | - |
+| `surface` (cards) | `#F4F3F1` | - | `#141414` | - |
+| `surface-alt` (hover, selected) | `#E6E0F0` (brand lavender) | text-only, tested | `#1C1C1C` | text-only, tested |
+| `text` | `#1C1917` | 13.8 / 15.8 | `#EDEDED` | 16.9 / 15.7 |
+| `muted` | `#57534E` | 6.0 / 6.9 | `#A3A3A3` | 7.9 / 7.3 |
+| `primary` (links, icons, active text) | `#6F4E37` (brand) | 5.9 / 6.7 | `#3DB8E0` (tint of brand `#007BA7`) | 8.6 / 8.0 |
+| `primary-fill` (button background) | `#6F4E37` (brand) | label `#FFFFFF` 7.4 | `#007BA7` (brand) | fill vs bg 4.1 / 3.9 (passes 3:1); label `#FFFFFF` 4.8 |
+| `secondary` (text, icons) | `#5B4B8A` (derived) | 5.9 / 6.7 | `#FF2D95` (brand) | 5.7 / 5.3 |
+| `secondary-fill` label | `#FFFFFF` on `#5B4B8A` (tested) | - | `#0A0A0A` on `#FF2D95` | 5.7 |
+| `ok` | `#166534` | 5.6 / 6.4 | `#4ADE80` | 11.4 / 10.6 |
+| `warn` | `#92400E` | 5.6 / 6.4 | `#FBBF24` | 11.9 / 11.0 |
+| `critical` | `#991B1B` | 6.5 / 7.5 | `#F87171` | 7.2 / 6.7 |
+| `info` | same as `primary` | 5.9 / 6.7 | same as `primary` | 8.6 / 8.0 |
+| `border-strong` (inputs, boundaries) | `#78716C` | 3.8 / 4.3 | `#737373` | 4.2 / 3.9 |
+| `border-subtle` (decorative only) | `#CFCDC9` | decorative | `#262626` | decorative |
+| `focus-ring` | `#1C1917` | 13.8 / 15.8 | `#7DD3FC` | 11.9 / 11.0 |
+
+Status tints (12 % of the status color over `surface`) keep text above 4.5:1: light ok 5.4, warn 5.4, critical 6.1; dark ok 8.5, warn 8.7, critical 5.7. They are still asserted by test, not assumed.
+
+Rules:
+- Text at least 4.5:1 (large text 3:1); UI boundaries, icons and chart marks at least 3:1.
+- Brand `#007BA7` as **small text** on `#0A0A0A` is 4.1:1 and fails; use `primary` (`#3DB8E0`) for text and keep `#007BA7` for fills, borders and large text.
+- White text on brand `#FF2D95` is 3.5:1 and fails; pink fills use `#0A0A0A` labels.
+- `critical` never uses the brand pink, so an accent is not mistaken for an alert. `critical` (`#F87171`) and the pink are both warm, so status always carries icon + text.
+- A new color or a change to any derived value needs approval (section 15).
 
 ## 6. Status language
 
@@ -147,19 +162,19 @@ Rules:
 
 ## 9. Data visualization tokens
 
-Chart marks need at least 3:1 against the card surface, and series must be distinguishable without color. Palette based on the color-blind-safe Okabe-Ito set, with light-theme variants darkened to pass contrast.
+Chart marks need at least 3:1 against the card surface, and series must be distinguishable without color. 
 
-| Series | Light (on `surface`) | Dark (on `surface`) |
-|--------|----------------------|---------------------|
-| 1 | `#0072b2` (5.0) | `#56b4e9` (7.7) |
-| 2 | `#d55e00` (3.7) | `#e69f00` (7.9) |
-| 3 | `#009e73` (3.3) | `#009e73` (5.2) |
-| 4 | `#a8467f` (5.2) | `#f0e442` (13.5) |
-| 5 | `#8a6d00` (4.7) | `#cc79a7` (5.8) |
-| 6 | `#7c3aed` (5.5) | `#d55e00` (4.6) |
-| Neutral | `#6b7280` (4.6) | `#94a3b8` (7.0) |
+| Series | Light (on `surface` `#F4F3F1`) | Dark (on `surface` `#141414`) |
+|--------|-------------------------------|-------------------------------|
+| 1 | `#0072B2` (4.7) | `#38A9DB` (6.9) |
+| 2 | `#C2410C` (4.7) | `#E69F00` (8.2) |
+| 3 | `#00875F` (4.1) | `#00B386` (6.8) |
+| 4 | `#A8467F` (4.9) | `#F0E442` (13.9) |
+| 5 | `#8A6D00` (4.4) | `#CC79A7` (6.0) |
+| 6 | `#6D28D9` (6.4) | `#E8743B` (6.1) |
+| Neutral | `#6B7280` (4.4) | `#A3A3A3` (7.3) |
 
-(The first Okabe-Ito sky blue and pink fail 3:1 on a light surface, so they were replaced for light mode.)
+Brand colors are reserved for UI chrome and are not chart series, so a brand accent is never read as data. Series colors come from the Okabe-Ito color-blind-safe family, adjusted per theme to pass 3:1 on the card surface.
 
 Rules:
 - Expose as `--chart-1 ... --chart-6, --chart-neutral`; Recharts reads them through `chart-tokens.ts`.

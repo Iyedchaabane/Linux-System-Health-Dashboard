@@ -176,28 +176,23 @@ Guidelines:
 Define semantic tokens as CSS variables and map Tailwind to them.
 
 ```css
-/* presentation/theme/tokens.css */
+/* presentation/theme/tokens/semantic.css (+ semantic.dark.css)
+   Token NAMES shown here; VALUES are defined only in ui-design-system section 5
+   (brand-anchored, contrast verified). Never copy hex values into this file by hand
+   from anywhere else. */
 :root {
-  --color-bg: 255 255 255;
-  --color-surface: 248 250 252;
-  --color-text: 15 23 42;
-  --color-muted: 71 85 105;
-  --color-ok: 22 101 52;
-  --color-warn: 146 64 14;
-  --color-critical: 153 27 27;
-  --color-accent: 29 78 216;
+  --color-bg: /* R G B, light bg */;
+  --color-surface: /* ... */;
+  --color-text: /* ... */;
+  --color-muted: /* ... */;
+  --color-primary: /* ... */;
+  --color-secondary: /* ... */;
+  --color-ok: /* ... */;
+  --color-warn: /* ... */;
+  --color-critical: /* ... */;
   --radius-card: 0.75rem;
 }
-:root[data-theme="dark"] {
-  --color-bg: 2 6 23;
-  --color-surface: 15 23 42;
-  --color-text: 226 232 240;
-  --color-muted: 148 163 184;
-  --color-ok: 74 222 128;
-  --color-warn: 251 191 36;
-  --color-critical: 248 113 113;
-  --color-accent: 96 165 250;
-}
+:root[data-theme="dark"] { /* same names, dark values from ui-design-system section 5 */ }
 ```
 
 ```ts

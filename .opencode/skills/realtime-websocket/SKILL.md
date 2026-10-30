@@ -166,7 +166,7 @@ Codes 4xxx are application-defined (range 4000-4999). Do not repurpose a code on
 - **Compression** (`permessage-deflate`): at 1 Hz and a few KiB per message, bandwidth is not the bottleneck, while per-connection compression state costs memory and CPU. **Default: disabled** (uvicorn `--ws-per-message-deflate false`); enable only if measurements on a remote/WAN deployment justify it, and re-measure CPU and RSS with 100 clients.
 - **Uvicorn settings to set explicitly**: `--ws-max-size` (inbound limit, small, e.g. 4096; the default is far larger), `--ws-ping-interval`, `--ws-ping-timeout`, `--limit-concurrency`, `--timeout-keep-alive`, a single worker (see `python-backend`).
 - **Fan-out cost** is O(clients) string sends per interval; target 100+ clients at 1 Hz with under 5 % extra CPU and flat memory. Measure, do not assume.
-- **Rate**: default 1 Hz; allow 0.5-10 Hz through a validated `subscribe` option within server limits; changing defaults or limits needs approval.
+- **Rate**: default interval 1 s; clients may request 1 s to 10 s (never faster) through a validated `subscribe` option; `hello` advertises `min_interval_ms` and `max_interval_ms`. Changing defaults or limits needs approval.
 - **Memory per client**: queue (small) + socket buffers; verify linear, bounded growth in a soak test.
 - Use the monotonic clock for intervals and timeouts; wall clock only for `ts` display.
 

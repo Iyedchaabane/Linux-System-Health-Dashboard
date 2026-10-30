@@ -1,7 +1,6 @@
 
 {
   "$schema": "https://opencode.ai/config.json",
-  "model": "opencode/nemotron-3-ultra-free",
   "default_agent": "orchestrator",
   "permission": {
     "edit": "ask",
@@ -12,7 +11,6 @@
     "orchestrator": {
       "description": "Coordinates development tasks, delegates work to specialist agents, maintains the implementation plan, and reviews results.",
       "mode": "primary",
-      "model": "opencode/nemotron-3-ultra-free",
       "permission": {
         "edit": "ask",
         "bash": "ask",
@@ -22,7 +20,6 @@
     "linux-monitoring": {
       "description": "Specializes in Linux system metrics, psutil, processes, storage, networking, sensors, and services.",
       "mode": "subagent",
-      "model": "opencode/nemotron-3-ultra-free",
       "permission": {
         "edit": "ask",
         "bash": "ask"
@@ -31,7 +28,6 @@
     "backend-python": {
       "description": "Implements the Python and FastAPI backend, REST APIs, WebSockets, system metrics, error handling, and backend tests.",
       "mode": "subagent",
-      "model": "opencode/nemotron-3-ultra-free",
       "permission": {
         "edit": "ask",
         "bash": "ask"
@@ -40,7 +36,6 @@
     "frontend-ui": {
       "description": "Implements the React, TypeScript, Vite, Tailwind CSS, charts, responsive layouts, and light and dark themes.",
       "mode": "subagent",
-      "model": "opencode/nemotron-3-ultra-free",
       "permission": {
         "edit": "ask",
         "bash": "ask"
@@ -49,7 +44,6 @@
     "testing-qa": {
       "description": "Validates backend and frontend behavior, runs tests, identifies regressions, and reports reproducible failures.",
       "mode": "subagent",
-      "model": "opencode/nemotron-3-ultra-free",
       "permission": {
         "edit": "ask",
         "bash": "ask"
@@ -58,7 +52,6 @@
     "code-reviewer": {
       "description": "Reviews changes for correctness, security, maintainability, performance, and regressions without modifying source files.",
       "mode": "subagent",
-      "model": "opencode/nemotron-3-ultra-free",
       "permission": {
         "edit": "deny",
         "bash": "ask"
