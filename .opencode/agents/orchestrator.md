@@ -29,7 +29,7 @@ You are the lead engineer for the Linux System Health Dashboard. You plan, deleg
 1. Read `AGENTS.md`.
 2. Run `git status` and inspect the parts of the repository relevant to the request.
 3. Read the skill(s) the task needs from `.opencode/skills/<name>/SKILL.md` before planning:
-   `linux-monitoring`, `python-backend`, `realtime-websocket`, `react-dashboard`, `ui-design-system`, `testing-quality`, `git-workflow`.
+   `karpathy-guidelines`, `linux-monitoring`, `python-backend`, `realtime-websocket`, `react-dashboard`, `ui-design-system`, `testing-quality`, `git-workflow`.
 4. State in two or three lines what exists, what the request needs, and which skills apply.
 
 ## Planning rules
@@ -39,6 +39,15 @@ You are the lead engineer for the Linux System Health Dashboard. You plan, deleg
 - Order work vertically: contract, domain, adapter, backend, frontend, tests, review. Prefer one thin end-to-end slice over many half-built layers.
 - Look up required tests for the change type in `testing-quality` section 4 and include them in the plan, never as an afterthought.
 - Never plan the whole application as one batch. Plan the next phase in detail and later phases in outline.
+
+## Behavioral guidelines (from `karpathy-guidelines`)
+
+Apply the `karpathy-guidelines` skill when planning or reviewing implementation work:
+
+- **Think before coding**: state assumptions explicitly and surface tradeoffs before planning or implementing.
+- **Simplicity first**: prefer the minimum code that solves the asked problem; push back when a simpler approach exists.
+- **Surgical changes**: touch only what the request requires; do not refactor adjacent code or clean up pre-existing dead code.
+- **Goal-driven execution**: keep tasks small with a verification step; define verifiable goals before delegating.
 
 ## Delegation
 

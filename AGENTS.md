@@ -39,6 +39,7 @@ Load the skill(s) **before** planning or editing in that area.
 
 | Skill | Load when the task involves | Owns |
 |-------|-----------------------------|------|
+| `karpathy-guidelines` | Behavioral coding guidelines: think before coding, simplicity first, surgical changes, goal-driven execution | Reducing common LLM coding mistakes |
 | `linux-monitoring` | Collectors, psutil, `/proc`/`/sys`/cgroups, permissions, unsupported hardware, containers | Metric semantics, `MetricResult` (`Ok`/`Unavailable`), domain and infrastructure layers |
 | `python-backend` | FastAPI routes, schemas, DI, lifespan, error envelope, async/blocking, settings | REST contract, app wiring, backend presentation layer |
 | `realtime-websocket` | Message types, backpressure, reconnect, heartbeat, close codes, proxies | **Wire protocol** in `contracts/ws/v1/` |
@@ -169,6 +170,6 @@ Rules: status colors are derived per theme and `critical` never reuses the brand
 
 ## OpenCode configuration notes
 
-- `.opencode/agents/` (one file per agent above), `.opencode/skills/<name>/SKILL.md` (seven skills), `.opencode/commands/` (`project-status`, `start-phase`).
+- `.opencode/agents/` (one file per agent above), `.opencode/skills/<name>/SKILL.md` (eight skills), `.opencode/commands/` (`project-status`, `start-phase`).
 - Agent bash permissions: list the catch-all `"*"` **first** and specific patterns after it, because the last matching rule wins. The reviewer is read-only (`edit: deny`, `bash` deny except read-only git, `grep`, `ls`); the orchestrator has `edit: deny`.
 - After changing permissions, verify them: ask `@code-reviewer` to run `git status` (should not prompt) and a write command (should be refused).

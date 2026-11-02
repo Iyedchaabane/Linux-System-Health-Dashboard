@@ -25,7 +25,7 @@ Config:
 
 ## What to check
 
-1. **Structure.** Compare against the expected layout in AGENTS.md: `AGENTS.md`, `opencode.json`, six agent files plus orchestrator (`orchestrator`, `linux-monitoring`, `backend-python`, `frontend-ui`, `testing-qa`, `code-reviewer`), and skills `linux-monitoring`, `python-backend`, `realtime-websocket`, `react-dashboard`, `ui-design-system`, `testing-quality`, `git-workflow`, each as `<name>/SKILL.md`. Report anything missing, extra, or misplaced (for example a stray `file1.md`).
+1. **Structure.** Compare against the expected layout in AGENTS.md: `AGENTS.md`, `opencode.json`, six agent files plus orchestrator (`orchestrator`, `linux-monitoring`, `backend-python`, `frontend-ui`, `testing-qa`, `code-reviewer`), and skills `karpathy-guidelines`, `linux-monitoring`, `python-backend`, `realtime-websocket`, `react-dashboard`, `ui-design-system`, `testing-quality`, `git-workflow`, each as `<name>/SKILL.md`. Report anything missing, extra, or misplaced (for example a stray `file1.md`).
 2. **Configuration.** Read `opencode.json`: is it valid JSON, and do any referenced agents, models or paths not exist?
 3. **Agents.** Open each file in `.opencode/agents/`: valid frontmatter with `description` and `mode`; only the orchestrator is `primary`; the reviewer has no edit or bash permission; the orchestrator has `edit: deny`. List name, mode, permissions.
 4. **Skills.** Open the top of each `SKILL.md`: frontmatter `name` equals the folder name, and `description` is present. List name and the first sentence of the description.

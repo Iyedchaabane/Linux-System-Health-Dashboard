@@ -20,14 +20,14 @@ Match the request to a phase by number or name. If it does not match, or no phas
 
 | # | Phase | Skills to load | Agents (in order, one writer at a time) | Must exist when done |
 |---|-------|----------------|------------------------------------------|----------------------|
-| 0 | Inspect and plan (no edits) | all seven | none | Phased plan with owners, tests, approvals |
-| 1 | Contracts and skeleton | `realtime-websocket`, `linux-monitoring`, `python-backend`, `testing-quality` | `@linux-monitoring` (domain, ports, `MetricResult`), `@backend-python` (`contracts/ws/v1/`, package skeleton, settings), `@testing-qa` (pytest config, domain and contract tests) | Fixtures validate against Pydantic models and JSON Schema |
-| 2 | Collectors (CPU and memory first) | `linux-monitoring`, `testing-quality` | `@linux-monitoring`, `@testing-qa` | Adapter tests with monkeypatched failures and recorded fixtures; suite passes as non-root |
-| 3 | Sampler, REST and WebSocket | `python-backend`, `realtime-websocket`, `linux-monitoring`, `testing-quality` | `@backend-python`, `@testing-qa`, `@code-reviewer` | Single sampler, hub with bounded queues, endpoint per contract, slow-client and leak tests |
-| 4 | Frontend foundation | `react-dashboard`, `ui-design-system`, `realtime-websocket`, `testing-quality` | `@frontend-ui`, `@testing-qa` | Tokens for both themes with contrast and parity tests, Zod schemas against shared fixtures, socket client, store, `MetricState` for all seven states |
-| 5 | First widgets end to end | `react-dashboard`, `ui-design-system`, `testing-quality` | `@frontend-ui`, `@testing-qa`, `@code-reviewer` | CPU and memory cards live, all states tested, axe clean in both themes, one Playwright journey |
-| 6 | More metrics (disk, network, processes) | all relevant | repeat the 2, 3, 5 pattern per metric | Each metric: collector, API field, protocol fixture, widget, tests |
-| 7 | Hardening and release | `testing-quality`, `realtime-websocket`, `linux-monitoring` | `@testing-qa`, `@backend-python`, `@code-reviewer` | CI stages, soak and chaos tests, deployment config, release checklist (`testing-quality` section 14) |
+| 0 | Inspect and plan (no edits) | all eight | none | Phased plan with owners, tests, approvals |
+| 1 | Contracts and skeleton | `karpathy-guidelines`, `realtime-websocket`, `linux-monitoring`, `python-backend`, `testing-quality` | `@linux-monitoring` (domain, ports, `MetricResult`), `@backend-python` (`contracts/ws/v1/`, package skeleton, settings), `@testing-qa` (pytest config, domain and contract tests) | Fixtures validate against Pydantic models and JSON Schema |
+| 2 | Collectors (CPU and memory first) | `karpathy-guidelines`, `linux-monitoring`, `testing-quality` | `@linux-monitoring`, `@testing-qa` | Adapter tests with monkeypatched failures and recorded fixtures; suite passes as non-root |
+| 3 | Sampler, REST and WebSocket | `karpathy-guidelines`, `python-backend`, `realtime-websocket`, `linux-monitoring`, `testing-quality` | `@backend-python`, `@testing-qa`, `@code-reviewer` | Single sampler, hub with bounded queues, endpoint per contract, slow-client and leak tests |
+| 4 | Frontend foundation | `karpathy-guidelines`, `react-dashboard`, `ui-design-system`, `realtime-websocket`, `testing-quality` | `@frontend-ui`, `@testing-qa` | Tokens for both themes with contrast and parity tests, Zod schemas against shared fixtures, socket client, store, `MetricState` for all seven states |
+| 5 | First widgets end to end | `karpathy-guidelines`, `react-dashboard`, `ui-design-system`, `testing-quality` | `@frontend-ui`, `@testing-qa`, `@code-reviewer` | CPU and memory cards live, all states tested, axe clean in both themes, one Playwright journey |
+| 6 | More metrics (disk, network, processes) | `karpathy-guidelines`, all relevant | repeat the 2, 3, 5 pattern per metric | Each metric: collector, API field, protocol fixture, widget, tests |
+| 7 | Hardening and release | `karpathy-guidelines`, `testing-quality`, `realtime-websocket`, `linux-monitoring` | `@testing-qa`, `@backend-python`, `@code-reviewer` | CI stages, soak and chaos tests, deployment config, release checklist (`testing-quality` section 14) |
 
 Prerequisites: a phase needs the previous phase's "must exist" items. Verify by inspecting the repository, not by assuming. If a prerequisite is missing, say so and propose to do that first. Phase 4 also needs my answer on the light-theme background question in AGENTS.md; if it is unanswered, ask before starting.
 

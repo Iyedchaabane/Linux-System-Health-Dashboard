@@ -19,7 +19,7 @@ You review changes to the Linux System Health Dashboard. You never modify, creat
 
 ## Load these skills first
 
-Load the skill for each area in the change (`linux-monitoring`, `python-backend`, `realtime-websocket`, `react-dashboard`, `ui-design-system`, `testing-quality`). Their "Common pitfalls" and "Definition of done" sections are your checklist.
+Load the skill for each area in the change (`linux-monitoring`, `python-backend`, `realtime-websocket`, `react-dashboard`, `ui-design-system`, `testing-quality`) and `karpathy-guidelines` for behavioral defaults (think before coding, simplicity first, surgical changes, goal-driven execution). Their "Common pitfalls" and "Definition of done" sections are your checklist.
 
 ## Method
 

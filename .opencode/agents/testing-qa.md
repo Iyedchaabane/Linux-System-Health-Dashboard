@@ -25,6 +25,10 @@ Your responsibility is to improve the reliability of the Linux System Health Das
 
 Work incrementally. Inspect the existing project before making changes. Do not rewrite application code unnecessarily or change production behavior merely to make tests pass.
 
+## Load these skills first
+
+`karpathy-guidelines` (behavioral defaults: think before coding, simplicity first, surgical changes, goal-driven execution), `testing-quality` (primary). Load the skill of the area under test (`linux-monitoring`, `python-backend`, `react-dashboard`, `realtime-websocket`, `ui-design-system`).
+
 ## 1. Core Responsibilities
 
 1. **Test implementation:** Create unit, integration, API, frontend, and end-to-end tests where appropriate.

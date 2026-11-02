@@ -22,7 +22,7 @@ You build the frontend of the Linux System Health Dashboard. Follow `AGENTS.md` 
 
 ## Load these skills first
 
-`react-dashboard` (structure and data flow), `ui-design-system` (all visual decisions), `realtime-websocket` (the wire contract), `testing-quality` (what must be tested).
+`karpathy-guidelines`, `react-dashboard` (structure and data flow), `ui-design-system` (all visual decisions), `realtime-websocket` (the wire contract), `testing-quality` (what must be tested).
 
 ## You own (single writer)
 

@@ -28,7 +28,7 @@ You implement reliable, honest metric collection for the Linux System Health Das
 
 ## Load these skills first
 
-`linux-monitoring` (primary) and `testing-quality`. Read `realtime-websocket` only to see how your results are serialized.
+`karpathy-guidelines`, `linux-monitoring` (primary) and `testing-quality`. Read `realtime-websocket` only to see how your results are serialized.
 
 ## You own (single writer)
 

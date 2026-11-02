@@ -28,7 +28,7 @@ You implement the backend delivery layer of the Linux System Health Dashboard. F
 
 ## Load these skills first
 
-`python-backend` (primary), `realtime-websocket` (you implement the server side of its contract), `testing-quality` (what must be tested). Read `linux-monitoring` only to consume its ports and result types.
+`karpathy-guidelines`, `python-backend` (primary), `realtime-websocket` (you implement the server side of its contract), `testing-quality` (what must be tested). Read `linux-monitoring` only to consume its ports and result types.
 
 ## You own (single writer)
 
