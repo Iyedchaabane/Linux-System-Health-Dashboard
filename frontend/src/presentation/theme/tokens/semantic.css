@@ -1,0 +1,35 @@
+/* Tier 2: semantic tokens, light theme (default). */
+:root {
+  /* surfaces */
+  --color-bg: 229 228 226;             /* #E5E4E2 */
+  --color-surface: 244 243 241;       /* #F4F3F1 */
+  --color-surface-alt: 230 224 240;   /* #E6E0F0 */
+  /* text */
+  --color-text: 28 25 23;             /* #1C1917 */
+  --color-muted: 87 83 78;            /* #57534E */
+  /* accents */
+  --color-primary: 111 78 55;          /* #6F4E37 */
+  --color-primary-fill: 111 78 55;     /* #6F4E37 */
+  --color-secondary: 91 75 138;        /* #5B4B8A */
+  --color-secondary-fill: 91 75 138;  /* #5B4B8A */
+  /* status */
+  --color-ok: 22 101 52;              /* #166534 */
+  --color-warn: 146 64 14;            /* #92400E */
+  --color-critical: 153 27 27;        /* #991B1B */
+  --color-info: 111 78 55;            /* #6F4E37 */
+  /* boundaries */
+  --color-border-strong: 120 113 108; /* #78716C */
+  --color-border-subtle: 207 205 201; /* #CFCDC9 */
+  --color-focus-ring: 28 25 23;       /* #1C1917 */
+  /* charts */
+  --chart-1: 0 114 178;              /* #0072B2 */
+  --chart-2: 194 65 12;             /* #C2410C */
+  --chart-3: 0 135 95;              /* #00875F */
+  --chart-4: 168 70 127;            /* #A8467F */
+  --chart-5: 138 109 0;             /* #8A6D00 */
+  --chart-6: 109 40 217;            /* #6D28D9 */
+  --chart-neutral: 107 114 128;      /* #6B7280 */
+
+  /* component-tier (optional knobs) */
+  --card-padding: var(--space-4);
+}
