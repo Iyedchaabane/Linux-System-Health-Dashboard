@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://linux-system-health-dashboard.invalid/schemas/client_message.schema.json",
+  "title": "ClientWebSocketMessage",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["v", "type", "seq", "ts", "data"],
+  "properties": {
+    "v": { "type": "integer", "const": 1 },
+    "type": { "type": "string", "enum": ["subscribe", "pong", "ping"] },
+    "seq": { "type": "integer", "minimum": 0 },
+    "ts": { "type": "integer", "minimum": 0 },
+    "data": { "type": ["object", "null"] }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "type": { "const": "subscribe" } }, "required": ["type"] },
+      "then": { "properties": { "data": { "$ref": "#/$defs/subscribeData" } }, "required": ["data"] }
+    },
+    {
+      "if": { "properties": { "type": { "const": "pong" } }, "required": ["type"] },
+      "then": { "properties": { "data": { "$ref": "#/$defs/emptyData" } }, "required": ["data"] }
+    },
+    {
+      "if": { "properties": { "type": { "const": "ping" } }, "required": ["type"] },
+      "then": { "properties": { "data": { "$ref": "#/$defs/emptyData" } }, "required": ["data"] }
+    }
+  ],
+  "$defs": {
+    "subscribeData": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["groups"],
+      "properties": { "groups": { "type": "array", "items": { "type": "string" }, "minItems": 1 } }
+    },
+    "emptyData": { "type": "object", "additionalProperties": false, "required": [], "properties": {} }
+  }
+}

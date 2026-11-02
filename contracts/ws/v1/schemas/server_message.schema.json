@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://linux-system-health-dashboard.invalid/schemas/server_message.schema.json",
+  "title": "ServerWebSocketMessage",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["v", "type", "seq", "ts", "data"],
+  "properties": {
+    "v": { "type": "integer", "const": 1 },
+    "type": { "type": "string", "enum": ["hello", "snapshot", "error", "ping", "bye"] },
+    "seq": { "type": "integer", "minimum": 0 },
+    "ts": { "type": "integer", "minimum": 0 },
+    "data": { "type": ["object", "null"] }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "type": { "const": "hello" } }, "required": ["type"] },
+      "then": { "properties": { "data": { "$ref": "#/$defs/helloData" } }, "required": ["data"] }
+    },
+    {
+      "if": { "properties": { "type": { "const": "snapshot" } }, "required": ["type"] },
+      "then": { "properties": { "data": { "$ref": "#/$defs/snapshotData" } }, "required": ["data"] }
+    },
+    {
+      "if": { "properties": { "type": { "const": "error" } }, "required": ["type"] },
+      "then": { "properties": { "data": { "$ref": "#/$defs/errorData" } }, "required": ["data"] }
+    },
+    {
+      "if": { "properties": { "type": { "const": "ping" } }, "required": ["type"] },
+      "then": { "properties": { "data": { "$ref": "#/$defs/pingData" } }, "required": ["data"] }
+    },
+    {
+      "if": { "properties": { "type": { "const": "bye" } }, "required": ["type"] },
+      "then": { "properties": { "data": { "$ref": "#/$defs/byeData" } }, "required": ["data"] }
+    }
+  ],
+  "$defs": {
+    "helloData": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["interval_ms", "max_message_bytes", "groups", "server_time", "limits"],
+      "properties": {
+        "interval_ms": { "type": "integer", "minimum": 100, "maximum": 10000 },
+        "max_message_bytes": { "type": "integer", "minimum": 1 },
+        "groups": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+        "server_time": { "type": "number", "minimum": 0 },
+        "limits": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "max_clients",
+            "max_clients_per_ip",
+            "max_message_bytes",
+            "rate_limit_burst",
+            "rate_limit_refill_per_second",
+            "send_timeout_seconds",
+            "handshake_timeout_seconds"
+          ],
+          "properties": {
+            "max_clients": { "type": "integer", "minimum": 1 },
+            "max_clients_per_ip": { "type": "integer", "minimum": 1 },
+            "max_message_bytes": { "type": "integer", "minimum": 1 },
+            "rate_limit_burst": { "type": "integer", "minimum": 1 },
+            "rate_limit_refill_per_second": { "type": "number", "minimum": 0, "maximum": 100 },
+            "send_timeout_seconds": { "type": "number", "minimum": 0.5, "maximum": 30 },
+            "handshake_timeout_seconds": { "type": "number", "minimum": 0.5, "maximum": 30 }
+          }
+        }
+      }
+    },
+    "snapshotData": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["groups"],
+      "properties": {
+        "groups": { "type": "object", "additionalProperties": { "$ref": "#/$defs/groupState" }, "minProperties": 1 },
+        "meta": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["dropped_since_last"],
+          "properties": { "dropped_since_last": { "type": "integer", "minimum": 0 } }
+        }
+      }
+    },
+    "errorData": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message"],
+      "properties": {
+        "code": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "message": { "type": "string", "minLength": 1, "maxLength": 512 }
+      }
+    },
+    "pingData": { "type": "object", "additionalProperties": false, "required": [], "properties": {} },
+    "byeData": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reason"],
+      "properties": { "reason": { "type": "string", "minLength": 1, "maxLength": 123 } }
+    },
+    "groupState": { "oneOf": [ { "$ref": "#/$defs/groupStateOk" }, { "$ref": "#/$defs/groupStateUnavailable" } ] },
+    "groupStateOk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "partial"],
+      "properties": {
+        "status": { "type": "string", "const": "ok" },
+        "value": { "type": ["object", "null"] },
+        "partial": { "type": "boolean" }
+      }
+    },
+    "groupStateUnavailable": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "kind", "reason"],
+      "properties": {
+        "status": { "type": "string", "const": "unavailable" },
+        "kind": { "type": "string" },
+        "reason": { "type": "string", "minLength": 1, "maxLength": 512 }
+      }
+    }
+  }
+}

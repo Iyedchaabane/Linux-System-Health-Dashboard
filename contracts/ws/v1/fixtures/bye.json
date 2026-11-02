@@ -1,0 +1,7 @@
+{
+  "v": 1,
+  "type": "bye",
+  "seq": 8,
+  "ts": 1767225608500,
+  "data": { "reason": "shutdown" }
+}

@@ -1,0 +1,7 @@
+{
+  "v": 1,
+  "type": "error",
+  "seq": 3,
+  "ts": 1767225603500,
+  "data": { "code": "INVALID_MESSAGE", "message": "safe validation error text" }
+}

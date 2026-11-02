@@ -1,0 +1,11 @@
+{
+  "v": 1,
+  "type": "snapshot",
+  "seq": 4,
+  "ts": 1767225604500,
+  "data": {
+    "groups": {
+      "cpu": { "status": "ok", "value": { "cpu_total": 12.5 }, "partial": true }
+    }
+  }
+}

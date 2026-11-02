@@ -1,0 +1,21 @@
+{
+  "v": 1,
+  "type": "hello",
+  "seq": 0,
+  "ts": 1767225600512,
+  "data": {
+    "interval_ms": 1000,
+    "max_message_bytes": 16384,
+    "groups": ["cpu", "memory"],
+    "server_time": 1767225600.512,
+    "limits": {
+      "max_clients": 100,
+      "max_clients_per_ip": 10,
+      "max_message_bytes": 4096,
+      "rate_limit_burst": 10,
+      "rate_limit_refill_per_second": 2.0,
+      "send_timeout_seconds": 5.0,
+      "handshake_timeout_seconds": 5.0
+    }
+  }
+}

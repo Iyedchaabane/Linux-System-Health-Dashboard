@@ -1,0 +1,12 @@
+{
+  "v": 1,
+  "type": "snapshot",
+  "seq": 6,
+  "ts": 1767225606500,
+  "data": {
+    "groups": {
+      "cpu": { "status": "unavailable", "kind": "permission", "reason": "proc access denied" },
+      "memory": { "status": "ok", "value": { "total": 1, "available": 2, "used_percent": 50.0 }, "partial": false }
+    }
+  }
+}
