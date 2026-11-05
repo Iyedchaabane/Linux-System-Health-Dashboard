@@ -49,14 +49,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         handshake_timeout_seconds=settings.ws_handshake_timeout_seconds,
     )
 
-    seq_counter = {"value": 0}
-
     async def consumer(snapshot: SystemSnapshot) -> None:
         from monitor.presentation.ws.snapshot import serialize_snapshot
 
-        seq_counter["value"] += 1
         with suppress(Exception):
-            hub.publish(serialize_snapshot(snapshot, seq=seq_counter["value"]))
+            hub.publish(serialize_snapshot(snapshot))
 
     async def collect() -> SystemSnapshot:
         return await collect_snapshot()
