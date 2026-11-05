@@ -7,12 +7,18 @@ import contextlib
 import json
 import logging
 import time
-from typing import cast
+from typing import Any, cast
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from starlette.websockets import WebSocketState
 
 from monitor.config.settings import Settings
+from monitor.presentation.ws.budget import (
+    DEFAULT_SNAPSHOT_BUDGET_BYTES,
+    SnapshotBudgetExceeded,
+    compact_json,
+    fit_snapshot_to_budget,
+)
 from monitor.presentation.ws.hub import BroadcastHub
 from monitor.presentation.ws.protocol import (
     ErrorData,
@@ -26,6 +32,64 @@ logger = logging.getLogger(__name__)
 MAX_MESSAGE_SIZE = 4096
 RATE_LIMIT_BURST = 10
 RATE_LIMIT_REFILL = 2.0
+
+
+class _OutboundMessages:
+    """Serialize writes and account for delivery on one connection."""
+
+    def __init__(
+        self,
+        ws: WebSocket,
+        hub: BroadcastHub,
+        client_id: str,
+        timeout: float,
+        budget_bytes: int = DEFAULT_SNAPSHOT_BUDGET_BYTES,
+    ) -> None:
+        self._ws = ws
+        self._hub = hub
+        self._client_id = client_id
+        self._timeout = timeout
+        self._budget_bytes = budget_bytes
+        self._lock = asyncio.Lock()
+        self._seq = 0
+        self._sequenced_drops = 0
+        self._delivered_drops = 0
+
+    async def send(self, raw: str) -> None:
+        """Assign sequence at the write boundary; acknowledge drops only on success."""
+        async with self._lock:
+            message = json.loads(raw)
+            drops = self._hub.get_client_drops(self._client_id)
+            # Hello is always zero, even if snapshots overflow during acceptance.
+            if message["type"] != "hello":
+                self._seq += drops - self._sequenced_drops
+                self._sequenced_drops = drops
+            message["seq"] = self._seq
+            self._seq += 1
+            snapshot = message["type"] == "snapshot"
+            if snapshot:
+                meta = message["data"].get("meta") or {}
+                meta["dropped_since_last"] = drops - self._delivered_drops
+                message["data"]["meta"] = meta
+
+                def encode(groups: dict[str, Any]) -> str:
+                    message["data"]["groups"] = groups
+                    return compact_json(message)
+
+                text = fit_snapshot_to_budget(
+                    message["data"]["groups"], encode, self._budget_bytes
+                )
+            else:
+                text = compact_json(message)
+            await asyncio.wait_for(self._ws.send_text(text), timeout=self._timeout)
+            if snapshot:
+                # Drops occurring during the await belong to the next report.
+                self._delivered_drops = drops
+
+    async def close(self, code: int, reason: str) -> None:
+        """Keep close frames ordered with data writes and bounded by the send timeout."""
+        async with self._lock:
+            await asyncio.wait_for(self._ws.close(code=code, reason=reason), timeout=self._timeout)
 
 
 def get_hub_from_ws(ws: WebSocket) -> BroadcastHub:
@@ -79,73 +143,70 @@ async def metrics_ws(
         await ws.close(code=error["code"], reason=error["reason"])
         return
 
-    # Accept the connection with subprotocol
-    await ws.accept(subprotocol="monitor.v1")
-
-    # Build and send hello message
-    hello_msg = hub.build_hello_message()
-    try:
-        await asyncio.wait_for(
-            ws.send_text(hello_msg),
-            timeout=settings.ws_send_timeout_seconds,
-        )
-    except TimeoutError:
-        logger.warning(f"Timeout sending hello to {client_id}")
-        await ws.close(code=1013, reason="Send timeout")
-        return
-
-    # Initialize rate limiter
-    rate_tokens = float(RATE_LIMIT_BURST)
-    last_refill = time.monotonic()
-
-    # Spawn sender task to deliver queued snapshots to this client
-    sender_task = asyncio.create_task(
-        _send_queued_messages(ws, client_id, hub, settings),
-        name=f"ws-sender-{client_id}",
+    tasks: list[asyncio.Task[None]] = []
+    outbound = _OutboundMessages(
+        ws,
+        hub,
+        client_id,
+        settings.ws_send_timeout_seconds,
+        settings.snapshot_size_budget_bytes,
     )
-
+    close_code, close_reason = 1000, ""
     try:
-        # Process messages from client (receiver)
-        await _process_client_messages(ws, client_id, rate_tokens, last_refill, settings)
+        await ws.accept(subprotocol="monitor.v1")
+        await outbound.send(hub.build_hello_message())
+        tasks.append(
+            asyncio.create_task(
+                _send_queued_messages(ws, client_id, hub, outbound),
+                name=f"ws-sender-{client_id}",
+            )
+        )
+        tasks.append(
+            asyncio.create_task(
+                _process_client_messages(
+                    ws, client_id, float(RATE_LIMIT_BURST), time.monotonic(), settings, outbound
+                ),
+                name=f"ws-receiver-{client_id}",
+            )
+        )
+        done, _ = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+        for task in done:
+            task.result()
     except WebSocketDisconnect:
         logger.debug(f"Client {client_id} disconnected")
-    except Exception as e:
-        logger.exception(f"Error handling client {client_id}: {e}")
+    except TimeoutError:
+        close_code, close_reason = 1013, "Send timeout"
+        logger.warning(f"Send timeout for client {client_id}")
+    except SnapshotBudgetExceeded:
+        # The shared budget guard already emits the throttled safe diagnostic.
+        close_code, close_reason = 1011, "Internal error"
+    except Exception as exc:
+        close_code, close_reason = 1011, "Internal error"
+        logger.exception("Error handling client %s: %s", client_id, exc)
     finally:
-        # Cancel and await sender; ignore cancellation
-        sender_task.cancel()
-        with contextlib.suppress(asyncio.CancelledError):
-            await sender_task
-        # Clean up
-        hub.disconnect(client_id, "close")
+        for task in tasks:
+            task.cancel()
+        try:
+            await asyncio.gather(*tasks, return_exceptions=True)
+        finally:
+            hub.disconnect(client_id, "close")
+            if ws.application_state == WebSocketState.CONNECTED:
+                with contextlib.suppress(Exception):
+                    await outbound.close(close_code, close_reason)
 
 
 async def _send_queued_messages(
     ws: WebSocket,
     client_id: str,
     hub: BroadcastHub,
-    settings: Settings,
+    outbound: _OutboundMessages,
 ) -> None:
-    """Poll and send queued snapshot messages to the client."""
+    """Let the connection supervisor handle send failures and receiver shutdown."""
     while ws.application_state == WebSocketState.CONNECTED:
-        try:
-            msg = hub.get_next_message(client_id)
-            if msg is not None:
-                try:
-                    await asyncio.wait_for(
-                        ws.send_text(msg),
-                        timeout=settings.ws_send_timeout_seconds,
-                    )
-                except TimeoutError:
-                    logger.warning(f"Send timeout for client {client_id}")
-                    with contextlib.suppress(Exception):
-                        await ws.close(code=1013, reason="Send timeout")
-                    return
-                continue
-        except Exception as e:
-            logger.exception(f"Sender error for client {client_id}: {e}")
-            return
-        # Brief poll interval to avoid tight CPU loop
+        msg = hub.get_next_message(client_id)
+        if msg is not None:
+            await outbound.send(msg)
+            continue
         await asyncio.sleep(0.05)
 
 
@@ -155,9 +216,9 @@ async def _process_client_messages(
     initial_tokens: float,
     _last_refill: float,
     settings: Settings,
+    outbound: _OutboundMessages,
 ) -> None:
     """Process messages from the client."""
-    seq = 0
     rate_tokens = initial_tokens
     lr = _last_refill
 
@@ -177,7 +238,7 @@ async def _process_client_messages(
             error_msg = ServerMessage(
                 v=1,
                 type=ServerMessageType.ERROR,
-                seq=seq,
+                seq=0,
                 ts=int(time.time() * 1000),
                 data=ErrorData(
                     type="error",
@@ -185,8 +246,8 @@ async def _process_client_messages(
                     message="Message exceeds size limit",
                 ),
             )
-            await ws.send_text(error_msg.model_dump_json())
-            await ws.close(code=1009, reason="Message too large")
+            await outbound.send(error_msg.model_dump_json())
+            await outbound.close(code=1009, reason="Message too large")
             return
 
         # Rate limit check
@@ -201,7 +262,7 @@ async def _process_client_messages(
             error_msg = ServerMessage(
                 v=1,
                 type=ServerMessageType.ERROR,
-                seq=seq,
+                seq=0,
                 ts=int(time.time() * 1000),
                 data=ErrorData(
                     type="error",
@@ -209,12 +270,11 @@ async def _process_client_messages(
                     message="Rate limit exceeded",
                 ),
             )
-            await ws.send_text(error_msg.model_dump_json())
-            await ws.close(code=4429, reason="Rate limit exceeded")
+            await outbound.send(error_msg.model_dump_json())
+            await outbound.close(code=4429, reason="Rate limit exceeded")
             return
 
         rate_tokens -= 1.0
-        seq += 1
 
         # Parse message
         try:
@@ -223,12 +283,12 @@ async def _process_client_messages(
 
             # Handle ping - respond with pong
             if msg_type == "ping":
-                await ws.send_text(
+                await outbound.send(
                     json.dumps(
                         {
                             "v": 1,
                             "type": "pong",
-                            "seq": seq,
+                            "seq": 0,
                             "ts": int(time.time() * 1000),
                             "data": {"type": "pong"},
                         }
@@ -243,10 +303,10 @@ async def _process_client_messages(
             error_msg = ServerMessage(
                 v=1,
                 type=ServerMessageType.ERROR,
-                seq=seq,
+                seq=0,
                 ts=int(time.time() * 1000),
                 data=ErrorData(type="error", code="INVALID_MESSAGE", message="Invalid JSON"),
             )
-            await ws.send_text(error_msg.model_dump_json())
-            await ws.close(code=4400, reason="Invalid message")
+            await outbound.send(error_msg.model_dump_json())
+            await outbound.close(code=4400, reason="Invalid message")
             return

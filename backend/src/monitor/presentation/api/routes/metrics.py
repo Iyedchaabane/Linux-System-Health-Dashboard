@@ -2,13 +2,19 @@
 
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Any, cast
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 
 from monitor.application.ports import HistoryStore
 from monitor.config.settings import Settings
-from monitor.domain.entities import CpuSnapshot, DiskUsage, MemorySnapshot, NetCounters
+from monitor.domain.entities import (
+    CpuSnapshot,
+    DiskUsage,
+    MemorySnapshot,
+    NetCounters,
+    ProcessList,
+)
 from monitor.domain.types import MetricResult, Ok
 from monitor.presentation.api.deps import (
     SnapshotProvider,
@@ -18,7 +24,20 @@ from monitor.presentation.api.deps import (
 )
 from monitor.presentation.api.errors import ApiError
 from monitor.presentation.api.schemas import HistoryPoint, HistoryResponse, SnapshotResponse
-from monitor.presentation.ws.protocol import GroupStateOk, GroupStateUnavailable
+from monitor.presentation.ws.budget import (
+    DEFAULT_SNAPSHOT_BUDGET_BYTES,
+    SnapshotBudgetExceeded,
+    compact_json,
+    enforce_snapshot_budget,
+    fit_snapshot_to_budget,
+)
+from monitor.presentation.ws.protocol import (
+    GroupStateOk,
+    GroupStateUnavailable,
+    ProcessesStateOk,
+    ProcessesValue,
+    ProcessRow,
+)
 
 router = APIRouter(prefix="/api/v1")
 
@@ -115,8 +134,42 @@ def _map_network_result(
     )
 
 
+def _map_processes_result(
+    result: MetricResult[ProcessList],
+) -> ProcessesStateOk | GroupStateUnavailable:
+    """Map a ProcessList MetricResult onto the WebSocket v1 processes group.
+
+    Rows keep the collector's order, cap and values: nothing is re-sorted,
+    re-truncated, renamed or clamped, and ``cpu_percent=None`` stays ``None``.
+    """
+    if isinstance(result, Ok):
+        v = result.value
+        return ProcessesStateOk(
+            status="ok",
+            partial=result.partial,
+            value=ProcessesValue(
+                items=[
+                    ProcessRow(
+                        pid=item.pid,
+                        name=item.name,
+                        cpu_percent=item.cpu_percent,
+                        memory_rss_bytes=item.memory_rss_bytes,
+                    )
+                    for item in v.items
+                ],
+                skipped=v.skipped,
+            ),
+        )
+    return GroupStateUnavailable(
+        status="unavailable",
+        kind=result.kind,
+        reason=result.reason,
+    )
+
+
 @router.get("/snapshot", response_model=SnapshotResponse)
 async def snapshot(
+    request: Request,
     snapshot_provider: Annotated[SnapshotProvider, Depends(get_snapshot_provider)],
 ) -> SnapshotResponse:
     """Return the latest cached snapshot."""
@@ -125,16 +178,60 @@ async def snapshot(
         raise ApiError(
             code="snapshot_not_ready", message="No snapshot collected yet", status_code=503
         )
-    return SnapshotResponse(
-        ts=int(snap.timestamp_utc.moment.timestamp() * 1000),
-        groups={
-            "cpu": _map_cpu_result(snap.cpu),
-            "memory": _map_memory_result(snap.memory),
-            "disk": _map_disk_result(snap.disk),
-            "network": _map_network_result(snap.network),
-        },
-        meta=None,
+    ts = int(snap.timestamp_utc.moment.timestamp() * 1000)
+    groups: dict[str, Any] = {
+        "cpu": _map_cpu_result(snap.cpu).model_dump(mode="json"),
+        "memory": _map_memory_result(snap.memory).model_dump(mode="json"),
+        "disk": _map_disk_result(snap.disk).model_dump(mode="json"),
+        "network": _map_network_result(snap.network).model_dump(mode="json"),
+    }
+    if snap.processes is not None:
+        groups["processes"] = _map_processes_result(snap.processes).model_dump(mode="json")
+
+    # Use the shared degradation policy with transport-specific sizing. The
+    # container is absent only in tests that exercise the route without the
+    # application lifespan.
+    container = getattr(request.app.state, "container", None)
+    budget_bytes = (
+        cast(int, container.settings.snapshot_size_budget_bytes)
+        if container is not None
+        else DEFAULT_SNAPSHOT_BUDGET_BYTES
     )
+    # Select groups using the canonical WebSocket shape (seq=1, drops=0), not
+    # the REST body. Actual stream seq/drop metadata can change availability
+    # near budget boundaries, even for the same source snapshot timestamp.
+    try:
+        fit_snapshot_to_budget(
+            groups,
+            lambda candidate: compact_json(
+                {
+                    "v": 1,
+                    "type": "snapshot",
+                    "seq": 1,
+                    "ts": ts,
+                    "data": {
+                        "type": "snapshot",
+                        "groups": candidate,
+                        "meta": {"dropped_since_last": 0},
+                    },
+                }
+            ),
+            budget_bytes,
+        )
+        response = SnapshotResponse(ts=ts, groups=groups, meta=None)
+        # Model normalization can add fields or change numeric encodings. Bound
+        # both FastAPI's Pydantic fast path and its compact JSONResponse path.
+        # This final REST check fails closed with 503; it does not refit groups.
+        final_size = max(
+            len(response.model_dump_json().encode("utf-8")),
+            len(compact_json(response.model_dump(mode="json")).encode("utf-8")),
+        )
+        enforce_snapshot_budget(final_size, budget_bytes)
+    except SnapshotBudgetExceeded:
+        raise ApiError(
+            code="INTERNAL_ERROR", message="Internal server error", status_code=503
+        ) from None
+    return response
 
 
 @router.get("/history", response_model=HistoryResponse)

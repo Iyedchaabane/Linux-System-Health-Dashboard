@@ -6,7 +6,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from monitor.presentation.ws.protocol import GroupState, SnapshotMeta
+from monitor.presentation.ws.protocol import GroupState, SnapshotGroups, SnapshotMeta
 
 __all__ = ["GroupState", "HealthResponse", "HistoryPoint", "HistoryResponse", "SnapshotResponse"]
 
@@ -17,7 +17,7 @@ class SnapshotResponse(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     ts: int = Field(ge=0, strict=True)
-    groups: dict[str, GroupState]
+    groups: SnapshotGroups
     meta: SnapshotMeta | None = None
 
 

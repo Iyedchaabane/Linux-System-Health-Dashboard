@@ -22,7 +22,7 @@ class TestWebSocketEndpoint:
             assert "interval_ms" in data["data"]
             assert "limits" in data["data"]
             assert "groups" in data["data"]
-            assert data["data"]["groups"] == ["cpu", "memory"]
+            assert data["data"]["groups"] == ["cpu", "memory", "processes"]
 
     def test_ping_pong(self) -> None:
         """Client ping should result in server pong."""

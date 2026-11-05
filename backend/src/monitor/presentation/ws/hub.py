@@ -143,7 +143,7 @@ class BroadcastHub:
             type="hello",
             interval_ms=1000,  # Default 1 second
             max_message_bytes=MAX_MESSAGE_BYTES,
-            groups=["cpu", "memory"],
+            groups=["cpu", "memory", "processes"],
             server_time=time.time(),
             limits=limits,
         )
