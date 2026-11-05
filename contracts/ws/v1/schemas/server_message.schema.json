@@ -118,10 +118,11 @@
     "processesValue": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["items", "skipped"],
+      "required": ["items", "skipped", "total"],
       "properties": {
         "items": { "type": "array", "items": { "$ref": "#/$defs/processRow" } },
-        "skipped": { "type": "integer", "minimum": 0 }
+        "skipped": { "type": "integer", "minimum": 0 },
+        "total": { "type": "integer", "minimum": 0 }
       }
     },
     "processesState": {

@@ -88,7 +88,7 @@ this is an additive entry in the existing capability list and does not
 change the protocol version.
 
 An available group is `{status: "ok", partial: boolean, value: {items:
-ProcessRow[], skipped: integer}}`. Each row contains only:
+ProcessRow[], skipped: integer, total: integer}}`. Each row contains only:
 
 - `pid`: positive integer.
 - `name`: string of at most 128 characters, safely truncated by the collector.
@@ -99,9 +99,15 @@ ProcessRow[], skipped: integer}}`. Each row contains only:
 
 `skipped` is a nonnegative integer counting skipped processes. `partial` is
 true when processes were skipped or CPU measurements are incomplete. Top-N
-truncation alone is not partial. Items are ordered by CPU descending, null
-last, with PID ascending for ties. Only namespace-visible processes are
-covered: neither a complete host-wide view nor host-wide totals are implied.
+truncation alone is not partial.
+
+`total` is a nonnegative integer: the number of readable, identity-checked
+processes in the same sample before top-N truncation. It excludes `skipped`
+processes and always satisfies `total >= len(items)`. `total` greater than
+`len(items)` reports truncation. It is not a host-wide inventory and does not
+reflect a cgroup process limit. Items are ordered by CPU descending, null last,
+with PID ascending for ties. Only namespace-visible processes are covered:
+neither a complete host-wide view nor host-wide totals are implied.
 Unavailable groups reuse the existing `status`, `kind`, `reason` shape.
 No command lines, usernames, environment variables, or other sensitive fields
 are included. No process history is retained.
@@ -114,7 +120,10 @@ the wire models validate field shapes and bounds, not collection behavior.
 
 Schema maintenance currently uses the committed static JSON Schema; no schema
 generation tool exists in this repository. The processes shape is also exposed
-by the Pydantic models' JSON Schema for both REST and WebSocket snapshots.
+by the Pydantic models' JSON Schema for both REST and WebSocket snapshots. The
+static schema can only require `total` to be a nonnegative integer; the
+cross-field invariant `total >= len(items)` is enforced by the Pydantic wire
+models and the domain entity.
 
 #### Snapshot size budget and honest degradation
 

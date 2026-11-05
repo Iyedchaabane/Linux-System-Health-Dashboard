@@ -9,6 +9,7 @@ Every fixture must receive the same verdict from Pydantic (the models the server
 actually uses) and from the published JSON Schema (what clients generate from).
 """
 
+import copy
 import json
 from pathlib import Path
 from typing import Any
@@ -125,3 +126,18 @@ def test_process_name_boundary_counts_unicode_code_points() -> None:
     assert len(accepted_name) == 128
     assert len(accepted_name.encode("utf-16-le")) // 2 > 128
     assert len(rejected_name) == 129
+
+
+def test_total_is_required_and_non_negative_in_both_validators() -> None:
+    """A copy of a valid payload without a usable ``total`` is rejected twice."""
+    payload = _load(FIXTURES_DIR / "valid_processes_normal.json")
+
+    missing = copy.deepcopy(payload)
+    del missing["data"]["groups"]["processes"]["value"]["total"]
+    negative = copy.deepcopy(payload)
+    negative["data"]["groups"]["processes"]["value"]["total"] = -1
+
+    for broken in (missing, negative):
+        with pytest.raises(ValidationError):
+            ServerMessage.model_validate(broken)
+        assert not SCHEMA_VALIDATOR.is_valid(broken)

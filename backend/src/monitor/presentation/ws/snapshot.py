@@ -140,6 +140,7 @@ def _map_processes_result(
                     for item in value.items
                 ],
                 skipped=value.skipped,
+                total=value.total,
             ),
         )
     if isinstance(result, Unavailable):

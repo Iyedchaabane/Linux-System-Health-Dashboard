@@ -193,6 +193,10 @@ class PsutilProcessReader:
         rows.sort(key=_sort_key)
         partial = skipped > 0 or any(row.cpu_percent is None for row in rows)
         return Ok(
-            ProcessList(items=tuple(rows[: self._max_processes]), skipped=skipped),
+            ProcessList(
+                items=tuple(rows[: self._max_processes]),
+                skipped=skipped,
+                total=len(rows),
+            ),
             partial=partial,
         )

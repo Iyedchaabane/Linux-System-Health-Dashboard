@@ -528,3 +528,40 @@ async def test_reader_does_not_mutate_the_psutil_procfs_path(
     await ProcfsProcessReader(str(tmp_path)).read()
 
     assert psutil.PROCFS_PATH == "/proc"
+
+
+async def test_cap_counts_valid_pids_before_truncation(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """``total`` counts valid PIDs before the cap and a pure cap is not partial."""
+    clock = FakeMonotonic()
+    _use_clock(monkeypatch, clock)
+    for pid in (1, 2, 3, 4):
+        _create(tmp_path, pid, name=f"p{pid}")
+    reader = ProcfsProcessReader(str(tmp_path), max_processes=2)
+    await reader.read()
+
+    clock.now = 101.0
+    for pid in (1, 2, 3, 4):
+        _write_stat(tmp_path, pid, name=f"p{pid}", utime=_CLK_TCK)
+    capped = await reader.read()
+
+    assert isinstance(capped, Ok)
+    assert capped.value.total == 4
+    assert capped.value.total > len(capped.value.items)
+    assert len(capped.value.items) == 2
+    assert capped.value.skipped == 0
+    assert capped.partial is False
+
+    bad = tmp_path / "99"
+    bad.mkdir()
+    (bad / "stat").write_text("not a stat line", encoding="utf-8")
+    clock.now = 102.0
+    for pid in (1, 2, 3, 4):
+        _write_stat(tmp_path, pid, name=f"p{pid}", utime=2 * _CLK_TCK)
+    result = await reader.read()
+
+    assert isinstance(result, Ok)
+    assert result.value.total == 4
+    assert len(result.value.items) == 2
+    assert result.value.skipped == 1

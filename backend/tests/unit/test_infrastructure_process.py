@@ -617,3 +617,50 @@ async def test_failed_enumeration_recovers_without_changing_cpu_baseline(
     assert recovered.value.skipped == 0
     assert [(row.pid, row.cpu_percent) for row in recovered.value.items] == [(123, 50.0)]
     assert not [record for record in caplog.records if record.name == process_module.logger.name]
+
+
+async def test_cap_counts_all_readable_processes_before_truncation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """``total`` counts readable processes before the cap and is not partial."""
+    clock = FakeMonotonic()
+    processes = [_process(pid) for pid in (1, 2, 3, 4)]
+    _use_clock(monkeypatch, clock)
+    _use_processes(monkeypatch, processes)
+    reader = PsutilProcessReader(max_processes=2)
+    await reader.read()
+
+    clock.now = 101.0
+    for index, process in enumerate(processes):
+        process.cpu_user = (index + 1) / 100.0
+    result = await reader.read()
+
+    assert isinstance(result, Ok)
+    assert result.value.total == 4
+    assert result.value.total > len(result.value.items)
+    assert [row.pid for row in result.value.items] == [4, 3]
+    assert result.value.skipped == 0
+    assert result.partial is False
+
+
+async def test_skipped_process_is_excluded_from_total(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Zombie and unreadable processes count as skipped, never as total."""
+    clock = FakeMonotonic()
+    readable = [_process(pid) for pid in (1, 2, 3, 4)]
+    unreadable = [
+        _process(5, raises=psutil.NoSuchProcess(pid=5)),
+        _process(6, status_value=psutil.STATUS_ZOMBIE),
+    ]
+    _use_clock(monkeypatch, clock)
+    _use_processes(monkeypatch, readable + unreadable)
+    reader = PsutilProcessReader(max_processes=2)
+    await reader.read()
+
+    result = await reader.read()
+
+    assert isinstance(result, Ok)
+    assert result.value.total == 4
+    assert result.value.skipped == 2
+    assert len(result.value.items) == 2

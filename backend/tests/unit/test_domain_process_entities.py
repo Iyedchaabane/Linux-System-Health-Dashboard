@@ -76,18 +76,60 @@ def test_process_info_accepts_a_name_at_the_limit() -> None:
 def test_process_list_rejects_negative_skipped() -> None:
     """A skipped count can never be negative."""
     with pytest.raises(ValueError):
-        ProcessList(items=(), skipped=-1)
+        ProcessList(items=(), skipped=-1, total=0)
 
 
 def test_process_list_rejects_bool_skipped() -> None:
     """A boolean is not a skipped count."""
     with pytest.raises(TypeError):
-        ProcessList(items=(), skipped=True)
+        ProcessList(items=(), skipped=True, total=0)
 
 
 def test_process_list_accepts_an_empty_result() -> None:
     """An empty namespace is a valid complete result."""
-    result = ProcessList(items=(), skipped=0)
+    result = ProcessList(items=(), skipped=0, total=0)
 
     assert result.items == ()
     assert result.skipped == 0
+    assert result.total == 0
+
+
+def _process_rows(count: int) -> tuple[ProcessInfo, ...]:
+    return tuple(
+        ProcessInfo(pid=index, name=f"p{index}", cpu_percent=None, memory_rss_bytes=0)
+        for index in range(1, count + 1)
+    )
+
+
+def test_process_list_accepts_total_equal_to_items() -> None:
+    """Without a cap, total equals the returned rows."""
+    result = ProcessList(items=_process_rows(2), skipped=0, total=2)
+
+    assert result.total == len(result.items)
+
+
+def test_process_list_accepts_total_above_items() -> None:
+    """A capped list may report more readable processes than rows."""
+    result = ProcessList(items=_process_rows(2), skipped=3, total=4)
+
+    assert result.total == 4
+    assert result.total > len(result.items)
+    assert result.total != result.skipped + len(result.items)
+
+
+def test_process_list_rejects_negative_total() -> None:
+    """A total count can never be negative."""
+    with pytest.raises(ValueError):
+        ProcessList(items=(), skipped=0, total=-1)
+
+
+def test_process_list_rejects_bool_total() -> None:
+    """A boolean is not a total count."""
+    with pytest.raises(TypeError):
+        ProcessList(items=(), skipped=0, total=True)
+
+
+def test_process_list_rejects_total_below_items() -> None:
+    """A total smaller than the returned rows cannot account for them."""
+    with pytest.raises(ValueError):
+        ProcessList(items=_process_rows(2), skipped=0, total=1)

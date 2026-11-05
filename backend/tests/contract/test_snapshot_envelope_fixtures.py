@@ -120,6 +120,7 @@ def _ok_processes() -> MetricResult[ProcessList]:
                 ProcessInfo(pid=42, name="bash", cpu_percent=12.25, memory_rss_bytes=2097152),
             ),
             skipped=0,
+            total=2,
         )
     )
 

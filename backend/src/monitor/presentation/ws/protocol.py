@@ -15,6 +15,7 @@ from pydantic import (
     TypeAdapter,
     ValidationInfo,
     field_validator,
+    model_validator,
 )
 from pydantic.json_schema import JsonSchemaValue
 from pydantic_core import CoreSchema
@@ -121,12 +122,24 @@ class ProcessRow(BaseModel):
 
 
 class ProcessesValue(BaseModel):
-    """Bounded current process list, not a historical series."""
+    """Bounded current process list, not a historical series.
+
+    ``total`` counts readable processes in the same sample before top-N
+    truncation, so it is at least ``len(items)``; ``skipped`` stays separate.
+    """
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     items: list[ProcessRow]
     skipped: int = Field(ge=0, strict=True)
+    total: int = Field(ge=0, strict=True)
+
+    @model_validator(mode="after")
+    def _total_covers_items(self) -> ProcessesValue:
+        """Reject a total that cannot account for the returned rows."""
+        if self.total < len(self.items):
+            raise ValueError("total must be greater than or equal to len(items)")
+        return self
 
 
 class ProcessesStateOk(BaseModel):

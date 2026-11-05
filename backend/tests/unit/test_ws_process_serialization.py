@@ -6,6 +6,9 @@ import json
 from datetime import UTC, datetime
 from typing import Any
 
+import pytest
+from pydantic import ValidationError
+
 from monitor.domain.entities import (
     CpuSnapshot,
     DiskUsage,
@@ -24,6 +27,7 @@ from monitor.domain.values import (
     SwapUsage,
     UtcTimestamp,
 )
+from monitor.presentation.ws.protocol import ProcessesValue, ProcessRow
 from monitor.presentation.ws.snapshot import serialize_snapshot
 
 
@@ -83,7 +87,7 @@ def test_ok_processes_group_keeps_collector_order_and_values() -> None:
         ProcessInfo(pid=20, name="fresh", cpu_percent=None, memory_rss_bytes=0),
         ProcessInfo(pid=30, name="idle", cpu_percent=0.0, memory_rss_bytes=512),
     )
-    result = Ok(ProcessList(items=items, skipped=7), partial=True)
+    result = Ok(ProcessList(items=items, skipped=7, total=5), partial=True)
 
     payload = _serialized(_snapshot(result), seq=9)
     group = payload["data"]["groups"]["processes"]
@@ -91,6 +95,8 @@ def test_ok_processes_group_keeps_collector_order_and_values() -> None:
     assert group["status"] == "ok"
     assert group["partial"] is True
     assert group["value"]["skipped"] == 7
+    assert group["value"]["total"] == 5
+    assert group["value"]["total"] != group["value"]["skipped"] + len(items)
     assert group["value"]["items"] == [
         {"pid": 10, "name": "busy", "cpu_percent": 250.0, "memory_rss_bytes": 2048},
         {"pid": 20, "name": "fresh", "cpu_percent": None, "memory_rss_bytes": 0},
@@ -125,7 +131,7 @@ def test_absent_processes_result_omits_key_and_keeps_the_envelope() -> None:
     assert payload["data"]["groups"]["cpu"]["value"]["cpu_total"] == 12.5
     assert payload["data"]["groups"]["network"]["value"]["rx_bytes"] == 1000
 
-    with_processes = _serialized(_snapshot(Ok(ProcessList(items=(), skipped=0))), seq=3, dropped=2)
+    with_processes = _serialized(_snapshot(Ok(ProcessList(items=(), skipped=0, total=0))), seq=3, dropped=2)
 
     assert with_processes["ts"] == payload["ts"]
     assert with_processes["data"]["meta"] == payload["data"]["meta"]
@@ -138,3 +144,45 @@ def test_absent_processes_result_omits_key_and_keeps_the_envelope() -> None:
         "network",
         "processes",
     }
+
+
+def test_processes_value_accepts_total_equal_to_and_above_items() -> None:
+    """``total`` covers the returned rows and may exceed them before the cap."""
+    row = ProcessRow(pid=1, name="p", cpu_percent=None, memory_rss_bytes=0)
+
+    at_least = ProcessesValue(items=[row], skipped=0, total=1)
+    above = ProcessesValue(items=[row], skipped=0, total=5)
+
+    assert at_least.total == 1
+    assert above.total == 5
+    assert above.total >= len(above.items)
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"items": [], "skipped": 0},
+        {"items": [], "skipped": 0, "total": -1},
+        {"items": [], "skipped": 0, "total": True},
+        {
+            "items": [
+                {"pid": 1, "name": "p", "cpu_percent": None, "memory_rss_bytes": 0}
+            ],
+            "skipped": 0,
+            "total": 0,
+        },
+    ],
+    ids=["missing", "negative", "bool", "below_items"],
+)
+def test_processes_value_rejects_invalid_total(payload: dict[str, Any]) -> None:
+    """A missing, negative, boolean or too-small total is not a valid payload."""
+    with pytest.raises(ValidationError):
+        ProcessesValue.model_validate(payload)
+
+
+def test_processes_value_still_forbids_unknown_fields() -> None:
+    """The added field did not relax the model's strict extra-field policy."""
+    with pytest.raises(ValidationError):
+        ProcessesValue.model_validate(
+            {"items": [], "skipped": 0, "total": 0, "unexpected": 1}
+        )

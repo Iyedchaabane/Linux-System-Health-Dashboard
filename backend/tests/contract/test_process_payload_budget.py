@@ -139,7 +139,7 @@ def _full_message(name: str, cores: int = 64) -> str:
         for i in range(25)
     ]
     group = ProcessesStateOk(
-        status="ok", partial=True, value=ProcessesValue(items=rows, skipped=12345)
+        status="ok", partial=True, value=ProcessesValue(items=rows, skipped=12345, total=25)
     )
     payload = json.loads(_four_groups(cores))
     payload["data"]["groups"]["processes"] = group.model_dump(mode="json")
@@ -218,6 +218,8 @@ async def test_full_snapshot_integrity_and_measurement(case: str) -> None:
     if processes["status"] == "ok":
         # Surviving rows are byte-identical: no truncation, renaming or renumbering.
         assert processes == raw_payload["data"]["groups"]["processes"]
+        assert processes["value"]["total"] == 25
+        assert processes["value"]["total"] >= len(processes["value"]["items"])
         rows = processes["value"]["items"]
         assert len(rows) == 25
         assert all(row["name"] == name for row in rows)

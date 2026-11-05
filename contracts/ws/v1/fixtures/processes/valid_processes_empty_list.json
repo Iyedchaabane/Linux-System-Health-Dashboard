@@ -11,7 +11,8 @@
         "partial": false,
         "value": {
           "items": [],
-          "skipped": 0
+          "skipped": 0,
+          "total": 0
         }
       }
     },

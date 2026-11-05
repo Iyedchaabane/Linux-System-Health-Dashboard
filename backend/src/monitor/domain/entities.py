@@ -138,18 +138,27 @@ class ProcessList:
     """Bounded process rows from one observation plus the skipped count.
 
     ``skipped`` counts processes that disappeared, were zombies or were not
-    readable. Rows are capped by the collector; the cap itself is not a
-    partial result.
+    readable. ``total`` counts the readable, identity-checked processes
+    considered in the same sample before the cap; it excludes ``skipped`` and
+    is never smaller than ``len(items)``. Rows are capped by the collector; the
+    cap itself is not a partial result.
     """
 
     items: tuple[ProcessInfo, ...]
     skipped: int
+    total: int
 
     def __post_init__(self) -> None:
         if isinstance(self.skipped, bool) or not isinstance(self.skipped, int):
             raise TypeError("skipped must be an integer")
         if self.skipped < 0:
             raise ValueError("skipped must be non-negative")
+        if isinstance(self.total, bool) or not isinstance(self.total, int):
+            raise TypeError("total must be an integer")
+        if self.total < 0:
+            raise ValueError("total must be non-negative")
+        if self.total < len(self.items):
+            raise ValueError("total must be greater than or equal to the number of items")
 
 
 @dataclass(frozen=True)

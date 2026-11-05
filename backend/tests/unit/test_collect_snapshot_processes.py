@@ -73,6 +73,7 @@ def _process_result() -> Ok[ProcessList]:
                 ProcessInfo(pid=7, name="worker", cpu_percent=None, memory_rss_bytes=4096),
             ),
             skipped=0,
+            total=1,
         ),
         partial=True,
     )

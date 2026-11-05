@@ -136,7 +136,7 @@ def _process_groups() -> dict[str, Any]:
         for index, name in enumerate(_process_names())
     ]
     processes = ProcessesStateOk(
-        status="ok", partial=True, value=ProcessesValue(items=rows, skipped=12345)
+        status="ok", partial=True, value=ProcessesValue(items=rows, skipped=12345, total=25)
     )
     return {
         "cpu": {
@@ -461,3 +461,12 @@ def test_two_short_unavailable_reasons_fit_minimum_valid_budget(
     assert len(text.encode("utf-8")) == size
     assert groups == original
     assert _budget_records(caplog) == []
+
+
+def test_process_total_excludes_skipped_in_budget_fixtures() -> None:
+    """The budget fixture's total covers rows, never rows plus skipped."""
+    value = _process_groups()["processes"]["value"]
+
+    assert value["total"] == 25
+    assert value["total"] >= len(value["items"])
+    assert value["total"] != value["skipped"] + len(value["items"])

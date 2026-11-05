@@ -129,7 +129,7 @@ async def _get_snapshot(
 
 async def test_rest_processes_match_the_websocket_group_for_the_same_snapshot() -> None:
     """Both transports expose the same values and order for one snapshot."""
-    result = Ok(ProcessList(items=_rows(3), skipped=4), partial=True)
+    result = Ok(ProcessList(items=_rows(3), skipped=4, total=7), partial=True)
     snapshot = _snapshot(result)
 
     body = await _get_snapshot(snapshot)
@@ -138,6 +138,7 @@ async def test_rest_processes_match_the_websocket_group_for_the_same_snapshot() 
     assert body["ts"] == ws_payload["ts"]
     assert body["groups"]["processes"] == ws_payload["data"]["groups"]["processes"]
     assert body["groups"]["processes"]["value"]["skipped"] == 4
+    assert body["groups"]["processes"]["value"]["total"] == 7
     assert body["groups"]["processes"]["partial"] is True
     assert [row["pid"] for row in body["groups"]["processes"]["value"]["items"]] == [
         1000,
@@ -170,7 +171,7 @@ async def test_rest_maps_unavailable_processes() -> None:
 
 async def test_budget_guard_degrades_the_whole_processes_group_without_rows() -> None:
     """A tight budget replaces the group wholesale; it never truncates rows."""
-    result = Ok(ProcessList(items=_rows(25), skipped=0))
+    result = Ok(ProcessList(items=_rows(25), skipped=0, total=25))
     snapshot = _snapshot(result)
 
     raw = json.loads(serialize_snapshot(snapshot))
@@ -266,8 +267,21 @@ async def test_invalid_inventory_names_are_isolated_through_rest_and_ws(
         "value": {
             "items": [{"pid": 1, "name": names[0], "cpu_percent": 200.0, "memory_rss_bytes": 2048}],
             "skipped": 4,
+            "total": 1,
         },
     }
     for group in ("cpu", "memory", "disk", "network"):
         assert ws_groups[group]["status"] == "ok"
         assert ws_groups[group] == json.loads(raw)["data"]["groups"][group]
+
+
+async def test_process_total_excludes_skipped_and_is_not_derivable_from_rows() -> None:
+    """``total`` counts readable processes only; skipped is never added to it."""
+    result = Ok(ProcessList(items=_rows(2), skipped=4, total=3))
+
+    body = await _get_snapshot(_snapshot(result))
+
+    value = body["groups"]["processes"]["value"]
+    assert value["total"] == 3
+    assert value["total"] >= len(value["items"])
+    assert value["total"] != value["skipped"] + len(value["items"])

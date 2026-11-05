@@ -18,7 +18,8 @@
               "memory_rss_bytes": 16384
             }
           ],
-          "skipped": 0
+          "skipped": 0,
+          "total": 1
         }
       }
     },

@@ -42,11 +42,12 @@ def _snapshot(*, terminal: bool = False, extra_unicode: int = 0) -> SystemSnapsh
                 UnavailableKind.DISABLED, "é" * count + "x" * (512 - count)
             )
     else:
-        lengths = [128] * 16 + [27] + [1] * 8
+        lengths = [128] * 16 + [16] + [1] * 8
         groups["processes"] = Ok(ProcessList(
             items=tuple(ProcessInfo(pid, "p" * length, 1.0, 1)
                         for pid, length in enumerate(lengths, start=1)),
             skipped=0,
+            total=len(lengths),
         ))
     return SystemSnapshot(
         **groups,

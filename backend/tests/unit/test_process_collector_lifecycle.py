@@ -50,7 +50,7 @@ def executors(monkeypatch: pytest.MonkeyPatch) -> Iterator[list[ControlledExecut
     for executor in created:
         for future in executor.futures:
             if not future.done():
-                future.set_result(Ok(ProcessList(items=(), skipped=0)))
+                future.set_result(Ok(ProcessList(items=(), skipped=0, total=0)))
 
 
 def assert_transient(result: MetricResult[ProcessList]) -> None:
@@ -72,14 +72,14 @@ async def test_concurrent_reads_submit_once_and_recover_after_completion(executo
         for _ in range(10):
             assert_transient(await asyncio.wait_for(reader.read(), 1))
         assert len(executor.futures) == 1
-        expected = Ok(ProcessList(items=(), skipped=1), partial=True)
+        expected = Ok(ProcessList(items=(), skipped=1, total=0), partial=True)
         flight.set_result(expected)
         assert await asyncio.wait_for(first, 1) is expected
 
         second = asyncio.create_task(reader.read())
         try:
             fresh_flight = await asyncio.wait_for(executor.submitted.get(), 1)
-            fresh = Ok(ProcessList(items=(), skipped=0))
+            fresh = Ok(ProcessList(items=(), skipped=0, total=0))
             fresh_flight.set_result(fresh)
             assert await asyncio.wait_for(second, 1) is fresh
             assert len(executor.futures) == 2
@@ -110,13 +110,13 @@ async def test_cancelled_waiter_retains_flight_and_never_replays_abandoned_resul
             assert_transient(await asyncio.wait_for(reader.read(), 1))
         assert len(executor.futures) == 1
 
-        abandoned = Ok(ProcessList(items=(), skipped=4), partial=True)
+        abandoned = Ok(ProcessList(items=(), skipped=4, total=0), partial=True)
         flight.set_result(abandoned)
         next_waiter = asyncio.create_task(reader.read())
         try:
             fresh_flight = await asyncio.wait_for(executor.submitted.get(), 1)
             assert fresh_flight is not flight
-            fresh = Ok(ProcessList(items=(), skipped=0))
+            fresh = Ok(ProcessList(items=(), skipped=0, total=0))
             fresh_flight.set_result(fresh)
             assert await asyncio.wait_for(next_waiter, 1) is fresh
             assert len(executor.futures) == 2
@@ -173,7 +173,7 @@ async def test_real_worker_close_is_nonwaiting_and_cancellation_does_not_stop_wo
     finished = Event()
     entered = asyncio.Event()
     loop = asyncio.get_running_loop()
-    expected = Ok(ProcessList(items=(), skipped=0))
+    expected = Ok(ProcessList(items=(), skipped=0, total=0))
 
     def blocked_collection():
         loop.call_soon_threadsafe(entered.set)

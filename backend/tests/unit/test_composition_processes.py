@@ -121,6 +121,7 @@ async def test_snapshot_provider_passes_the_process_reader(
         ProcessList(
             items=(ProcessInfo(pid=42, name="wired", cpu_percent=None, memory_rss_bytes=1),),
             skipped=0,
+            total=1,
         )
     )
     seen_caps: list[int] = []

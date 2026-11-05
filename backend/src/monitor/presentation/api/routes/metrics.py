@@ -158,6 +158,7 @@ def _map_processes_result(
                     for item in v.items
                 ],
                 skipped=v.skipped,
+                total=v.total,
             ),
         )
     return GroupStateUnavailable(
