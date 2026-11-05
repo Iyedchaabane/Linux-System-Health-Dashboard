@@ -94,6 +94,7 @@ def build_container(settings: Settings) -> Container:
         memory_reader=memory_reader,
         clock=clock,
         disk_reader=disk_reader,
+        network_reader=network_reader,
     )
 
     return Container(
