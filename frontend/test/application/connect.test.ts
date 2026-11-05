@@ -192,6 +192,41 @@ describe("connectDashboard reconnect epochs", () => {
     expect(state().cpuHistory).toEqual([90, 15]);
   });
 
+  it("rejects a REST process total below the item count without replacing state", async () => {
+    const rest = deferred();
+    const socket = start(() => rest.promise);
+    socket.message(snapshot(100, 90));
+    reconnect(socket);
+    const before = state();
+    rest.resolve({
+      ts: 200,
+      groups: {
+        ...groups(25),
+        processes: {
+          status: "ok",
+          partial: false,
+          value: {
+            items: [
+              { pid: 71, name: "worker", cpu_percent: null, memory_rss_bytes: 1024 },
+              { pid: 72, name: "helper", cpu_percent: 2, memory_rss_bytes: 2048 },
+            ],
+            skipped: 0,
+            total: 1,
+          },
+        },
+      },
+    });
+    await rest.promise;
+    expect(state()).toBe(before);
+    // The rejected REST payload was not ingested: the retained absent-group
+    // state from the WebSocket snapshot is unchanged.
+    expect(state().metricStates.processes).toEqual({
+      status: "unavailable",
+      kind: "unsupported",
+      reason: "The server did not include a processes group in this snapshot.",
+    });
+  });
+
   it.each(["same", "older"] as const)("removes REST process rows on WS unavailable and rejects delayed %s-epoch REST", async (epoch) => {
     const first = deferred();
     const delayed = deferred();
@@ -210,12 +245,17 @@ describe("connectDashboard reconnect epochs", () => {
       value: { items: [
         { pid: 71, name: "old-worker", cpu_percent: null, memory_rss_bytes: 1024 },
         { pid: 72, name: "old-helper", cpu_percent: 2, memory_rss_bytes: 2048 },
-      ], skipped: 0 },
+      ], skipped: 0, total: 2 },
     };
     first.resolve({ ts: 200, groups: { processes: available } });
     await first.promise;
     expect(state().latestSnapshot?.seq).toBeNull();
     expect(state().metricStates.processes).toEqual({ status: "ok", value: available.value });
+    // The REST snapshot's total survives ingest unchanged.
+    expect(state().metricStates.processes).toMatchObject({
+      status: "ok",
+      value: { total: 2 },
+    });
     render(createElement(ProcessPanel));
     expect(screen.getByRole("rowheader", { name: "old-worker" })).toBeTruthy();
     expect(screen.getByRole("rowheader", { name: "old-helper" })).toBeTruthy();

@@ -31,6 +31,7 @@ describe("ProcessPanel accessibility", () => {
               },
             ],
             skipped: 0,
+            total: 2,
           },
         },
       },

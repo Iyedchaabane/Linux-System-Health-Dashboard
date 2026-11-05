@@ -37,10 +37,21 @@ export const ProcessRowSchema = z.strictObject({
 });
 
 /** Bounded process list carried by the optional `processes` group. */
-export const ProcessesValueSchema = z.strictObject({
-  items: z.array(ProcessRowSchema),
-  skipped: z.number().int().min(0),
-});
+export const ProcessesValueSchema = z
+  .strictObject({
+    items: z.array(ProcessRowSchema),
+    total: z.number().int().min(0),
+    skipped: z.number().int().min(0),
+  })
+  .superRefine((value, ctx) => {
+    if (value.total < value.items.length) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["total"],
+        message: "total must be greater than or equal to items.length",
+      });
+    }
+  });
 
 export const ProcessesGroupStateOkSchema = z.strictObject({
   status: z.literal("ok"),

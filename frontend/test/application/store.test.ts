@@ -296,10 +296,13 @@ describe("processes metric state", () => {
       { pid: 11, name: "beta", cpu_percent: null, memory_rss_bytes: 2048 },
     ],
     skipped: 0,
+    total: 2,
   };
   const listB = {
     items: [{ pid: 12, name: "gamma", cpu_percent: 2.5, memory_rss_bytes: 4096 }],
     skipped: 1,
+    // The server total is independent of items + skipped.
+    total: 5,
   };
 
   beforeEach(() => useDashboardStore.getState().reset());

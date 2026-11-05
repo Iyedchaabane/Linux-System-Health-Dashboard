@@ -56,6 +56,8 @@ export interface ProcessRow {
 /** Bounded current process list; not a historical series. */
 export interface ProcessList {
   items: ProcessRow[];
+  /** Total processes visible on the host; `items` may be a bounded subset. */
+  total: number;
   skipped: number;
 }
 

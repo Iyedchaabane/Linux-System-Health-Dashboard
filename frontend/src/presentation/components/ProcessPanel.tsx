@@ -6,6 +6,7 @@ import {
   CircleSlash,
   Clock,
   List,
+  ListFilter,
   RefreshCw,
   WifiOff,
 } from "lucide-react";
@@ -193,6 +194,17 @@ export function ProcessPanel() {
 
     body = (
       <>
+        <p className="mb-2 inline-flex items-center gap-1.5 text-xs text-muted">
+          <ListFilter
+            aria-hidden="true"
+            className="h-4 w-4 shrink-0 text-primary"
+          />
+          <span>
+            {list.total > list.items.length
+              ? `Showing top ${list.items.length} of ${list.total} processes`
+              : `${list.total} ${list.total === 1 ? "process" : "processes"}`}
+          </span>
+        </p>
         {(list.skipped > 0 || partial) && (
           <div className="mb-2 space-y-1 text-xs text-muted">
             {partial && list.skipped === 0 && (

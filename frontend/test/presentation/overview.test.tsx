@@ -156,6 +156,7 @@ describe("compact overview", () => {
               },
             ],
             skipped: 0,
+            total: 1,
           },
         },
       },

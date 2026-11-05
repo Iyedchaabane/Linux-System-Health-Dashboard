@@ -36,6 +36,13 @@ function setProcessState(
   }));
 }
 
+/** The only line that summarises the process count, present only with list data. */
+function countLine() {
+  return screen.queryByText(
+    /^(Showing top \d+ of \d+ processes|\d+ process(?:es)?)$/,
+  );
+}
+
 const sampleItems: ProcessList["items"] = [
   { pid: 300, name: "zeta", cpu_percent: null, memory_rss_bytes: 5 * 1024 ** 2 },
   {
@@ -57,10 +64,11 @@ describe("ProcessPanel", () => {
     expect(screen.getByRole("status")).toHaveTextContent("Loading process data");
     expect(screen.queryByRole("table")).toBeNull();
     expect(screen.queryAllByRole("rowheader")).toHaveLength(0);
+    expect(countLine()).toBeNull();
   });
 
   it("renders the server order exactly, without re-sorting or padding", () => {
-    ingestOk({ items: sampleItems, skipped: 0 });
+    ingestOk({ items: sampleItems, skipped: 0, total: sampleItems.length });
     render(<ProcessPanel />);
     const table = screen.getByRole("table", { name: /running processes/i });
     const rowHeaders = within(table).getAllByRole("rowheader");
@@ -84,7 +92,7 @@ describe("ProcessPanel", () => {
       cpu_percent: i,
       memory_rss_bytes: 1024,
     }));
-    ingestOk({ items: many, skipped: 0 });
+    ingestOk({ items: many, skipped: 0, total: many.length });
     render(<ProcessPanel />);
     const table = screen.getByRole("table", { name: /running processes/i });
     const rowHeaders = within(table).getAllByRole("rowheader");
@@ -97,7 +105,7 @@ describe("ProcessPanel", () => {
   });
 
   it("formats CPU and memory without clamping or inventing values", () => {
-    ingestOk({ items: sampleItems, skipped: 0 });
+    ingestOk({ items: sampleItems, skipped: 0, total: sampleItems.length });
     render(<ProcessPanel />);
     const table = screen.getByRole("table", { name: /running processes/i });
     expect(within(table).getByText("Measuring")).toBeTruthy();
@@ -116,6 +124,7 @@ describe("ProcessPanel", () => {
         { pid: 9, name: longName, cpu_percent: 0, memory_rss_bytes: 0 },
       ],
       skipped: 0,
+      total: 1,
     });
     render(<ProcessPanel />);
     const rowHeader = screen.getByRole("rowheader");
@@ -131,6 +140,7 @@ describe("ProcessPanel", () => {
         { pid: 72, name: actualName, cpu_percent: 3, memory_rss_bytes: 2048 },
       ],
       skipped: 0,
+      total: 2,
     };
     ingestOk(value);
     const before = useDashboardStore.getState();
@@ -151,34 +161,82 @@ describe("ProcessPanel", () => {
     expect(value.items.map((item) => item.name)).toEqual(["", actualName]);
   });
 
-  it("shows a partial indicator and the skipped count without color alone", () => {
-    ingestOk(
-      {
-        items: [sampleItems[0]],
-        skipped: 3,
-      },
-      true,
-    );
+  it("shows a partial indicator and an independent total and skipped count", () => {
+    const value: ProcessList = {
+      items: [sampleItems[0]],
+      skipped: 3,
+      total: 10,
+    };
+    ingestOk(value, true);
     render(<ProcessPanel />);
     expect(screen.getByText("Partial data")).toBeTruthy();
+    expect(countLine()).toHaveTextContent(
+      `Showing top ${value.items.length} of ${value.total} processes`,
+    );
     expect(screen.getByText("3 processes could not be read.")).toBeTruthy();
+    // The total is the server's count, never items + skipped (which would be 4).
+    expect(countLine()).not.toHaveTextContent("of 4 processes");
     expect(screen.getByRole("table")).toBeTruthy();
   });
 
   it("explains partial data when no processes were skipped", () => {
-    ingestOk({ items: [sampleItems[0]], skipped: 0 }, true);
+    ingestOk({ items: [sampleItems[0]], skipped: 0, total: 1 }, true);
     render(<ProcessPanel />);
     expect(screen.getByText("Partial data")).toBeTruthy();
     expect(
       screen.getByText("Some CPU values are not measured yet."),
     ).toBeTruthy();
+    expect(countLine()).toHaveTextContent("1 process");
   });
 
   it("shows skipped information for an ok list", () => {
-    ingestOk({ items: [sampleItems[0]], skipped: 2 });
+    ingestOk({ items: [sampleItems[0]], skipped: 2, total: 1 });
     render(<ProcessPanel />);
     expect(screen.getByText("2 processes could not be read.")).toBeTruthy();
     expect(screen.queryByText("Partial data")).toBeNull();
+    expect(countLine()).toHaveTextContent("1 process");
+  });
+
+  it("reports the server total when the list is truncated", () => {
+    const items: ProcessList["items"] = Array.from({ length: 25 }, (_, i) => ({
+      pid: 2000 - i,
+      name: `proc-${i}`,
+      cpu_percent: i,
+      memory_rss_bytes: 1024,
+    }));
+    const value: ProcessList = { items, skipped: 0, total: 407 };
+    ingestOk(value);
+    render(<ProcessPanel />);
+    // Derived from the snapshot, so hardcoded counts cannot satisfy this.
+    expect(countLine()).toHaveTextContent(
+      `Showing top ${value.items.length} of ${value.total} processes`,
+    );
+    expect(
+      within(screen.getByRole("table")).getAllByRole("rowheader"),
+    ).toHaveLength(value.items.length);
+  });
+
+  it("reports a complete list count", () => {
+    ingestOk({ items: sampleItems, skipped: 0, total: sampleItems.length });
+    render(<ProcessPanel />);
+    expect(countLine()).toHaveTextContent("3 processes");
+  });
+
+  it("uses the singular for one process", () => {
+    ingestOk({ items: [sampleItems[0]], skipped: 0, total: 1 });
+    render(<ProcessPanel />);
+    expect(countLine()).toHaveTextContent("1 process");
+  });
+
+  it("marks the count icon decorative and keeps the meaning in text", () => {
+    ingestOk({ items: sampleItems, skipped: 0, total: sampleItems.length });
+    render(<ProcessPanel />);
+    const paragraph = countLine()!.closest("p")!;
+    const icon = paragraph.querySelector("svg");
+    expect(icon).not.toBeNull();
+    expect(icon).toHaveAttribute("aria-hidden", "true");
+    // The text alone conveys the count; the icon carries no accessible name.
+    expect(paragraph).toHaveTextContent("3 processes");
   });
 
   it("shows the unavailable kind and reason without a table", () => {
@@ -189,6 +247,7 @@ describe("ProcessPanel", () => {
       screen.getByText("Process listing is not permitted"),
     ).toBeTruthy();
     expect(screen.queryByRole("table")).toBeNull();
+    expect(countLine()).toBeNull();
   });
 
   it("explains an absent group without fabricating an unavailable kind", () => {
@@ -208,11 +267,13 @@ describe("ProcessPanel", () => {
     expect(within(panel).getByText(/not provided by the server/i)).toBeTruthy();
     expect(screen.queryByText("Not supported on this host")).toBeNull();
     expect(screen.queryByRole("table")).toBeNull();
+    expect(countLine()).toBeNull();
   });
 
   it("reports an ok empty list as no processes, not an error", () => {
-    ingestOk({ items: [], skipped: 0 });
+    ingestOk({ items: [], skipped: 0, total: 0 });
     render(<ProcessPanel />);
+    expect(countLine()).toHaveTextContent("0 processes");
     expect(
       screen.getByText("No processes reported in the latest snapshot."),
     ).toBeTruthy();
@@ -226,12 +287,13 @@ describe("ProcessPanel", () => {
     ["fatal", "Disconnected · showing last received list"],
     ["connecting", "Reconnecting · showing last received list"],
   ] as const)("keeps the last list and marks it when %s", (connection, label) => {
-    ingestOk({ items: sampleItems, skipped: 0 });
+    ingestOk({ items: sampleItems, skipped: 0, total: sampleItems.length });
     useDashboardStore.getState().setConnectionState(connection as ConnectionStatus);
     render(<ProcessPanel />);
     expect(screen.getByText(label)).toBeTruthy();
     expect(screen.getByRole("table")).toBeTruthy();
     expect(screen.getByRole("rowheader", { name: "zeta" })).toBeTruthy();
+    expect(countLine()).toHaveTextContent("3 processes");
   });
 
   it("shows an informative error state", () => {
@@ -243,10 +305,11 @@ describe("ProcessPanel", () => {
     render(<ProcessPanel />);
     expect(screen.getByText("The process collector failed.")).toBeTruthy();
     expect(screen.queryByRole("table")).toBeNull();
+    expect(countLine()).toBeNull();
   });
 
   it("exposes table semantics and all four column headers", () => {
-    ingestOk({ items: sampleItems, skipped: 0 });
+    ingestOk({ items: sampleItems, skipped: 0, total: sampleItems.length });
     render(<ProcessPanel />);
     const panel = screen.getByRole("region", { name: "Running processes" });
     const table = within(panel).getByRole("table", {

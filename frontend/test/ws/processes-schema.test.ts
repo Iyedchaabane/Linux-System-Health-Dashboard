@@ -31,6 +31,7 @@ describe("processes group schema", () => {
         value: {
           items: [row({ cpu_percent: null }), row({ pid: 7, cpu_percent: 250 })],
           skipped: 0,
+          total: 2,
         },
       }),
     );
@@ -48,7 +49,22 @@ describe("processes group schema", () => {
         snapshotWith({
           status: "ok",
           partial: true,
-          value: { items: [row()], skipped: 3 },
+          value: { items: [row()], skipped: 3, total: 10 },
+        }),
+      ),
+    ).not.toThrow();
+  });
+
+  it.each([
+    ["equal to the item count", 2],
+    ["greater than the item count", 25],
+  ])("accepts a total %s", (_label, total) => {
+    expect(() =>
+      parseServerMessage(
+        snapshotWith({
+          status: "ok",
+          partial: false,
+          value: { items: [row(), row({ pid: 7 })], skipped: 0, total },
         }),
       ),
     ).not.toThrow();
@@ -102,7 +118,7 @@ describe("processes group schema", () => {
         snapshotWith({
           status: "ok",
           partial: false,
-          value: { items: [invalidRow], skipped: 0 },
+          value: { items: [invalidRow], skipped: 0, total: 1 },
         }),
       ),
     ).toThrow();
@@ -119,7 +135,7 @@ describe("processes group schema", () => {
         snapshotWith({
           status: "ok",
           partial: false,
-          value: { items: [incompleteRow], skipped: 0 },
+          value: { items: [incompleteRow], skipped: 0, total: 1 },
         }),
       ),
     ).toThrow();
@@ -136,7 +152,7 @@ describe("processes group schema", () => {
     const message = snapshotWith({
       status: "ok",
       partial: false,
-      value: { items: [row({ name })], skipped: 0 },
+      value: { items: [row({ name })], skipped: 0, total: 1 },
     });
     const parsed = parseServerMessage(JSON.parse(JSON.stringify(message)));
     expect(parsed).toEqual(message);
@@ -147,7 +163,7 @@ describe("processes group schema", () => {
       parseServerMessage(
         snapshotWith({
           status: "ok",
-          value: { items: [row()], skipped: 0 },
+          value: { items: [row()], skipped: 0, total: 1 },
         }),
       ),
     ).toThrow();
@@ -159,7 +175,19 @@ describe("processes group schema", () => {
         snapshotWith({
           status: "ok",
           partial: false,
-          value: { items: [row()] },
+          value: { items: [row()], total: 1 },
+        }),
+      ),
+    ).toThrow();
+  });
+
+  it("rejects an ok payload missing total", () => {
+    expect(() =>
+      parseServerMessage(
+        snapshotWith({
+          status: "ok",
+          partial: false,
+          value: { items: [row()], skipped: 0 },
         }),
       ),
     ).toThrow();
@@ -171,7 +199,35 @@ describe("processes group schema", () => {
         snapshotWith({
           status: "ok",
           partial: false,
-          value: { skipped: 0 },
+          value: { skipped: 0, total: 0 },
+        }),
+      ),
+    ).toThrow();
+  });
+
+  it.each([
+    ["negative", -1],
+    ["fractional", 1.5],
+    ["boolean", true],
+  ])("rejects a %s total", (_label, total) => {
+    expect(() =>
+      parseServerMessage(
+        snapshotWith({
+          status: "ok",
+          partial: false,
+          value: { items: [row()], skipped: 0, total },
+        }),
+      ),
+    ).toThrow();
+  });
+
+  it("rejects a total below the reported item count", () => {
+    expect(() =>
+      parseServerMessage(
+        snapshotWith({
+          status: "ok",
+          partial: false,
+          value: { items: [row(), row({ pid: 7 })], skipped: 0, total: 1 },
         }),
       ),
     ).toThrow();
@@ -183,7 +239,23 @@ describe("processes group schema", () => {
         snapshotWith({
           status: "ok",
           partial: false,
-          value: { items: [row({ command: "worker --serve" })], skipped: 0 },
+          value: {
+            items: [row({ command: "worker --serve" })],
+            skipped: 0,
+            total: 1,
+          },
+        }),
+      ),
+    ).toThrow();
+  });
+
+  it("rejects unknown fields on the process list value", () => {
+    expect(() =>
+      parseServerMessage(
+        snapshotWith({
+          status: "ok",
+          partial: false,
+          value: { items: [row()], skipped: 0, total: 1, command: "worker" },
         }),
       ),
     ).toThrow();
