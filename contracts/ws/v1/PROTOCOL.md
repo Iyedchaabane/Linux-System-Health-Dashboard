@@ -37,7 +37,7 @@ Client → server: `subscribe`, `pong`, `ping`.
   "data": {
     "interval_ms": 1000,
     "max_message_bytes": 16384,
-    "groups": ["cpu", "memory"],
+    "groups": ["cpu", "memory", "processes"],
     "server_time": 1767225600.512,
     "limits": {
       "max_clients": 100,
@@ -83,7 +83,9 @@ otherwise.
 
 The additive `groups.processes` shape is shared by REST `/api/v1/snapshot`
 and WebSocket `snapshot.data.groups`; v1 is unchanged. It may be absent.
-This contract does not enable collection or advertise a hello capability.
+The `hello` message advertises `processes` alongside `cpu` and `memory`;
+this is an additive entry in the existing capability list and does not
+change the protocol version.
 
 An available group is `{status: "ok", partial: boolean, value: {items:
 ProcessRow[], skipped: integer}}`. Each row contains only:
