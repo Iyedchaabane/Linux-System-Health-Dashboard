@@ -7,6 +7,7 @@ from monitor.infrastructure.psutil_cpu import PsutilCpuReader
 from monitor.infrastructure.psutil_disk import PsutilDiskReader
 from monitor.infrastructure.psutil_memory import PsutilMemoryReader
 from monitor.infrastructure.psutil_network import PsutilNetworkReader
+from monitor.infrastructure.psutil_process import PsutilProcessReader
 from monitor.infrastructure.system_clock import SystemClock
 
 
@@ -31,7 +32,7 @@ def test_container_components_wired_in_phase2() -> None:
     assert isinstance(container.snapshot_provider, CollectSnapshot)
     assert isinstance(container.disk_reader, PsutilDiskReader)
     assert isinstance(container.network_reader, PsutilNetworkReader)
-    assert container.process_reader is None
+    assert isinstance(container.process_reader, PsutilProcessReader)
     assert container.sensor_reader is None
     assert container.history_store is None
 

@@ -23,6 +23,7 @@ from monitor.infrastructure.psutil_cpu import PsutilCpuReader
 from monitor.infrastructure.psutil_disk import PsutilDiskReader
 from monitor.infrastructure.psutil_memory import PsutilMemoryReader
 from monitor.infrastructure.psutil_network import PsutilNetworkReader
+from monitor.infrastructure.psutil_process import PsutilProcessReader
 from monitor.infrastructure.system_clock import SystemClock
 
 
@@ -67,6 +68,7 @@ class Container:
     clock: Clock | None = None
     history_store: HistoryStore | None = None
     snapshot_provider: Callable[[], Any] | None = None
+    cleanup_callback: Callable[[], None] | None = None
 
     def __post_init__(self) -> None:
         """Validate that required components are wired."""
@@ -88,6 +90,7 @@ def build_container(settings: Settings) -> Container:
 
     disk_reader = PsutilDiskReader()
     network_reader = PsutilNetworkReader()
+    process_reader = PsutilProcessReader(max_processes=settings.max_processes_in_stream)
 
     collect_snapshot = CollectSnapshot(
         cpu_reader=cpu_reader,
@@ -95,6 +98,7 @@ def build_container(settings: Settings) -> Container:
         clock=clock,
         disk_reader=disk_reader,
         network_reader=network_reader,
+        process_reader=process_reader,
     )
 
     return Container(
@@ -105,9 +109,10 @@ def build_container(settings: Settings) -> Container:
         memory_reader=memory_reader,
         disk_reader=disk_reader,
         network_reader=network_reader,
-        process_reader=None,
+        process_reader=process_reader,
         sensor_reader=None,
         clock=clock,
         history_store=None,
         snapshot_provider=collect_snapshot,
+        cleanup_callback=process_reader.close,
     )
