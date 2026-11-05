@@ -19,7 +19,7 @@ history charts, and connection state.
 - Honest states: `ok`, `partial`, `unavailable`, `stale`, `disconnected`,
   `error`, `loading` — never `0` or last-known-as-fresh.
 - Read-only API. Binds to `127.0.0.1` by default; configurable allowed origins.
-- 88.03 % backend test coverage (strict mypy + Ruff + import-linter).
+- 92.97 % backend test coverage (strict mypy + Ruff + import-linter).
 
 ## Architecture
 
@@ -88,7 +88,7 @@ Makefile targets (from repo root):
 make check        # all fast checks
 make test         # pytest (default tier)
 make lint && make typecheck && make arch
-make coverage
+make test-all     # backend + frontend tests
 ```
 
 Frontend:
@@ -110,6 +110,15 @@ npm run test:e2e     # not in package.json; run: npx playwright test
 - Close codes: 1000, 1001, 1008, 1009, 1011, 1013, 4400, 4401, 4429.
 - Full specification: `contracts/ws/v1/PROTOCOL.md`. A rest endpoint exists at `GET /api/v1/snapshot`.
 
+## Quick Start
+
+```bash
+./start.sh
+```
+
+Additional Makefile commands:
+- `make up`, `make down`, `make restart`, `make logs`, `make status`, `make build`, `make test`, `make lint`, `make clean`.
+
 ## Security
 - Default bind `127.0.0.1`, no wildcard CORS.
 - Origin check on WS; empty allowlist rejects browser-origin upgrades (non-browser tooling still allowed).
@@ -118,7 +127,6 @@ npm run test:e2e     # not in package.json; run: npx playwright test
 - Errors never emit stack traces or internal paths.
 
 ## Current Limitations
-- Live WebSocket Playwright E2E coverage deferred due to Vite/proxy origin 403; direct backend WS upgrade is healthy.
 - History tracked in memory (1-hour 1s) for scalar series; no per-client backlog replay.
 - No authentication (out of scope for v1); runs as an unprivileged user.
 - Only CPU, memory, disk, and network (cumulative) metrics implemented; additional metrics are future phases.
@@ -130,6 +138,39 @@ contracts/ws/v1/{schemas,fixtures,PROTOCOL.md}
 frontend/src/{domain,infrastructure,application,presentation,app}
 tests, e2e, docs/design-system
 ```
+
+## T2 Status — Running Processes Monitoring
+
+**Status:** PASS WITH NOTES
+
+### Implemented functionality
+- Container-scoped Linux process collector (PID, name, CPU percent and RSS).
+- Process group present in REST snapshots and WebSocket snapshots (`groups.processes`) at 25-row stream (100 REST) cap.
+- Backend, WebSocket envelope and Zod schema agreed on process row shape, partial/unavailable status and bounds.
+- Frontend process panel and table with honest Loading/Unavailable/Stale/Partial states; no client-side truncation or fabrication.
+
+### Verification evidence
+Re-verified on the current tree.
+- Backend: 358 tests passed, coverage 92.97% (threshold 85%), Ruff check, mypy strict and import-linter clean.
+- Frontend: 271 tests passed; typecheck, lint and build clean.
+- Browser (isolated Playwright/Chromium): 6 smoke passed + 3 controlled recovery passed; no console errors, no failed REST requests; responsive checks passed.
+- Docker: backend and frontend isolated builds passed; REST/WebSocket (hello + snapshot) and schema validation passed; proper desktop/mobile checks.
+
+### Known limitations (not resolved)
+- Process monitoring reflects the Docker/container PID namespace; it is not host-wide monitoring.
+- Frontend container has no explicit healthcheck.
+- Backend `Dockerfile` installs `uv` without a pinned version.
+- Nginx master starts as root (workers run as `nginx`).
+- Allowed-origin policy could be narrowed (port-less localhost origins are currently accepted).
+
+### Deferred technical debt (needs approval before work starts)
+- Pin `uv` version in backend image for reproducibility.
+- Narrow acceptable production origins to only configured ports.
+- Add frontend container healthcheck.
+- Harden/restrict Nginx root-master behavior.
+- Broader browser coverage for stale-state suppression and missing process data.
+
+No claim of host-wide monitoring is made.
 
 ## License
 License file not present (TBD). All code is project-controlled; do not assume an open-source license without confirmation.

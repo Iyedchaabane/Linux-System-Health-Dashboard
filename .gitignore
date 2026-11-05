@@ -56,6 +56,8 @@ build/
 
 # Vite
 dist/
+dist-e2e/
+dist-e2e-controlled/
 *.local
 
 # Test output
@@ -85,3 +87,11 @@ yarn-error.log*
 *.env
 *.env.local
 *.env.*.local
+
+# graphify
+graphify-out/
+
+#docs
+docs/design-system/dashboard-brief.md
+docs/design-system/dashboard-current.png
+docs/design-system/dashboard-target.png

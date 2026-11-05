@@ -1,46 +1,56 @@
-# Makefile for Linux System Health Dashboard
-# Phase 1.0: Standard entry points for development and CI
+.PHONY: help check test lint typecheck type-check arch clean up down restart logs status build test-all
 
-.PHONY: check test lint typecheck type-check arch format coverage help
-
-# Default target
 help:
-	@echo "Available targets (run from repository root):"
-	@echo "  check      - Run all fast-tier checks (lint, typecheck, arch, test)"
-	@echo "  test       - Run backend tests (default tier, excluding perf/soak/quarantine)"
-	@echo "  lint       - Run Ruff checks"
-	@echo "  format     - Check Ruff formatting"
-	@echo "  typecheck  - Run strict mypy"
-	@echo "  type-check - Alias for typecheck"
-	@echo "  arch       - Run architecture checks with import-linter"
-	@echo "  coverage   - Run tests with coverage report"
+	@echo "Available targets:"
+	@echo "  help       - show this help"
+	@echo "  up         - start via docker compose"
+	@echo "  down       - stop via docker compose"
+	@echo "  restart    - restart stack"
+	@echo "  logs       - tail logs"
+	@echo "  status     - compose status"
+	@echo "  build      - docker compose build"
+	@echo "  test       - pytest backend only"
+	@echo "  test-all   - backend + frontend"
+	@echo "  lint       - ruff + mypy + tsc/eslint"
+	@echo "  typecheck  - mypy and tsc"
+	@echo "  arch       - import-linter"
+	@echo "  clean      - remove containers/images (volumes untouched; requires 'yes')"
 
-# check: Fast tier - everything the CI runs
+REPO_ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 check: lint typecheck arch test
 
-# test: Backend tests (default tier, excluding perf, soak, privileged, quarantine)
+up:
+	docker compose up -d --build
+
+down:
+	docker compose down
+
+restart: down up
+
+logs:
+	docker compose logs -f --tail=100
+
+status:
+	docker compose ps
+
+build:
+	docker compose build
+
 test:
 	cd backend && uv run pytest -m "not perf and not soak and not privileged and not quarantine"
 
-# lint: Run Ruff checks
+test-all: test
+	cd frontend && npm run test
+
 lint:
-	cd backend && uv run ruff check .
+	cd backend && uv run ruff check . && uv run mypy --strict src && cd ../frontend && npm run lint && npm run typecheck
 
-# format: Check Ruff formatting
-format:
-	cd backend && uv run ruff format --check .
-
-# typecheck: Run strict mypy
 typecheck:
-	cd backend && uv run mypy --strict src
+	cd backend && uv run mypy --strict src && cd ../frontend && npm run typecheck
 
-# type-check: Alias for typecheck
-type-check: typecheck
-
-# arch: Run architecture checks with import-linter
 arch:
 	cd backend && uv run lint-imports
 
-# coverage: Run tests with coverage report
-coverage:
-	cd backend && uv run pytest --cov=src/monitor --cov-report=term-missing
+clean:
+	@echo "WARNING: removes compose containers/images (volumes retained)."
+	@read -p "Type 'yes' to continue: " ans; [ "$$ans" = "yes" ] && (cd $(REPO_ROOT) && docker compose down --rmi local) || echo "cancelled"
