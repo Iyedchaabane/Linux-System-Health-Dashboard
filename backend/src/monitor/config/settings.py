@@ -63,6 +63,11 @@ class Settings(BaseSettings):
     max_processes_in_rest: int = Field(
         default=100, ge=1, le=500, description="Max processes in REST response"
     )
+    process_procfs_path: str = Field(
+        default="/proc",
+        min_length=1,
+        description="Procfs root used for process collection",
+    )
 
     # Snapshot size budget
     snapshot_size_budget_bytes: int = Field(

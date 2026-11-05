@@ -144,8 +144,8 @@ tests, e2e, docs/design-system
 **Status:** PASS WITH NOTES
 
 ### Implemented functionality
-- Container-scoped Linux process collector (PID, name, CPU percent and RSS).
-- Process group present in REST snapshots and WebSocket snapshots (`groups.processes`) at 25-row stream (100 REST) cap.
+- Linux process collector (PID, name, CPU percent and RSS); default `process_procfs_path=/proc` reflects the current PID namespace. Compose uses `MONITOR_PROCESS_PROCFS_PATH=/host/proc` with the read-only mount `/proc:/host/proc:ro` for host-process visibility.
+- Process group present in shared REST and WebSocket snapshots (`groups.processes`); the dashboard shows at most the existing top 25 processes by CPU, with unknown CPU values last.
 - Backend, WebSocket envelope and Zod schema agreed on process row shape, partial/unavailable status and bounds.
 - Frontend process panel and table with honest Loading/Unavailable/Stale/Partial states; no client-side truncation or fabrication.
 
@@ -157,7 +157,8 @@ Re-verified on the current tree.
 - Docker: backend and frontend isolated builds passed; REST/WebSocket (hello + snapshot) and schema validation passed; proper desktop/mobile checks.
 
 ### Known limitations (not resolved)
-- Process monitoring reflects the Docker/container PID namespace; it is not host-wide monitoring.
+- Host-process visibility does not guarantee host-wide scope for all metrics: CPU/memory retain their native psutil view, not cgroup-limit accounting.
+- Read-only host procfs is not a confidentiality boundary: process metadata remains exposed, although the adapter collects no command lines or environment variables. Mount it only into a trusted backend; permissions and UID/ptrace restrictions limit reads but do not eliminate metadata exposure.
 - Frontend container has no explicit healthcheck.
 - Backend `Dockerfile` installs `uv` without a pinned version.
 - Nginx master starts as root (workers run as `nginx`).

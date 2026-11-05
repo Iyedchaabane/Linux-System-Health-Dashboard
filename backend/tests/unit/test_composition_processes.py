@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -24,6 +25,7 @@ from monitor.domain.values import (
     Percent,
     SwapUsage,
 )
+from monitor.infrastructure.procfs_process import ProcfsProcessReader
 from monitor.infrastructure.psutil_process import PsutilProcessReader
 
 
@@ -81,15 +83,43 @@ def test_process_reader_uses_the_stream_cap_setting() -> None:
             container.cleanup_callback()
 
 
+@pytest.mark.parametrize("procfs_path", ["/proc", "/proc/"])
+def test_default_or_trailing_slash_procfs_selects_the_psutil_reader(
+    procfs_path: str,
+) -> None:
+    """The default root and its trailing-slash spelling keep the psutil reader."""
+    container = composition.build_container(Settings(process_procfs_path=procfs_path))
+    try:
+        assert type(container.process_reader) is PsutilProcessReader
+    finally:
+        if container.cleanup_callback is not None:
+            container.cleanup_callback()
+
+
+def test_custom_procfs_path_selects_the_procfs_reader(tmp_path: Path) -> None:
+    """A custom root wires the procfs reader with the stream cap and closes it."""
+    container = composition.build_container(
+        Settings(process_procfs_path=str(tmp_path), max_processes_in_stream=11)
+    )
+    try:
+        reader = container.process_reader
+        assert type(reader) is ProcfsProcessReader
+        assert reader._procfs_path == str(tmp_path)
+        assert reader._max_processes == 11
+        assert container.cleanup_callback == reader.close
+    finally:
+        if container.cleanup_callback is not None:
+            container.cleanup_callback()
+    assert reader._closed is True
+
+
 async def test_snapshot_provider_passes_the_process_reader(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """The container's provider returns the process result, never DISABLED."""
     expected = Ok(
         ProcessList(
-            items=(
-                ProcessInfo(pid=42, name="wired", cpu_percent=None, memory_rss_bytes=1),
-            ),
+            items=(ProcessInfo(pid=42, name="wired", cpu_percent=None, memory_rss_bytes=1),),
             skipped=0,
         )
     )

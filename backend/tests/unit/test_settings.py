@@ -24,6 +24,7 @@ def test_defaults() -> None:
     assert s.history_max_seconds == 3600
     assert s.max_processes_in_stream == 25
     assert s.max_processes_in_rest == 100
+    assert s.process_procfs_path == "/proc"
     assert s.snapshot_size_budget_bytes == 16384
     assert s.allowed_origins == []
     assert s.docs_enabled is True
@@ -39,12 +40,21 @@ def test_env_overrides(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("MONITOR_SAMPLE_INTERVAL_SECONDS", "2.0")
     monkeypatch.setenv("MONITOR_MAX_WS_CLIENTS", "42")
     monkeypatch.setenv("MONITOR_WS_QUEUE_SIZE", "6")
+    monkeypatch.setenv("MONITOR_PROCESS_PROCFS_PATH", "/host/proc")
     s = Settings()
     assert s.host == "0.0.0.0"
     assert s.port == 9000
     assert s.sample_interval_seconds == 2.0
     assert s.max_ws_clients == 42
     assert s.ws_queue_size == 6
+    assert s.process_procfs_path == "/host/proc"
+
+
+def test_empty_process_procfs_path_raises(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The procfs root must be a non-empty path."""
+    monkeypatch.setenv("MONITOR_PROCESS_PROCFS_PATH", "")
+    with pytest.raises(ValidationError):
+        Settings()
 
 
 def test_invalid_port_raises(monkeypatch: pytest.MonkeyPatch) -> None:

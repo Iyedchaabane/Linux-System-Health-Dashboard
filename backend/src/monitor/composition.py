@@ -5,6 +5,7 @@ This is the ONLY place that imports from infrastructure and presentation.
 
 from collections.abc import Callable
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Protocol
 
 from monitor.application.collect_snapshot import CollectSnapshot
@@ -19,6 +20,7 @@ from monitor.domain.ports import (
     ProcessReader,
     SensorReader,
 )
+from monitor.infrastructure.procfs_process import ProcfsProcessReader
 from monitor.infrastructure.psutil_cpu import PsutilCpuReader
 from monitor.infrastructure.psutil_disk import PsutilDiskReader
 from monitor.infrastructure.psutil_memory import PsutilMemoryReader
@@ -90,7 +92,14 @@ def build_container(settings: Settings) -> Container:
 
     disk_reader = PsutilDiskReader()
     network_reader = PsutilNetworkReader()
-    process_reader = PsutilProcessReader(max_processes=settings.max_processes_in_stream)
+    process_reader: ProcessReader
+    if Path(settings.process_procfs_path) == Path("/proc"):
+        process_reader = PsutilProcessReader(max_processes=settings.max_processes_in_stream)
+    else:
+        process_reader = ProcfsProcessReader(
+            procfs_path=settings.process_procfs_path,
+            max_processes=settings.max_processes_in_stream,
+        )
 
     collect_snapshot = CollectSnapshot(
         cpu_reader=cpu_reader,
