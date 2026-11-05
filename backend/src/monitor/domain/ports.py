@@ -9,7 +9,7 @@ from monitor.domain.entities import (
     DiskUsage,
     MemorySnapshot,
     NetCounters,
-    ProcessInfo,
+    ProcessList,
     SensorSnapshot,
 )
 from monitor.domain.types import MetricResult
@@ -43,7 +43,7 @@ class NetReader(Protocol):
 class ProcessReader(Protocol):
     """Port for process metric collection."""
 
-    async def read(self) -> MetricResult[ProcessInfo]: ...
+    async def read(self) -> MetricResult[ProcessList]: ...
 
 
 class SensorReader(Protocol):

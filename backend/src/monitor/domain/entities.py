@@ -18,6 +18,7 @@ from monitor.domain.values import (
 )
 
 ALERT_CONSECUTIVE_THRESHOLD = 3
+PROCESS_NAME_MAX_LENGTH = 128
 
 
 class AlertState(StrEnum):
@@ -96,12 +97,59 @@ class NetThroughput:
 
 @dataclass(frozen=True)
 class ProcessInfo:
-    """Minimal process information."""
+    """One process observed in the current PID namespace.
+
+    Only processes visible to the monitor are represented: a container sees its
+    own PID namespace, so this is not a host-wide inventory and its rows must
+    never be summed into host totals. ``memory_rss_bytes`` is resident set size,
+    which double-counts shared pages across processes. ``cpu_percent`` is
+    ``None`` while no CPU-time delta exists for the identity (first observation
+    or PID reuse) and is never a placeholder zero.
+    """
 
     pid: int
     name: str
-    cpu_percent: Percent
-    memory_percent: Percent
+    cpu_percent: float | None
+    memory_rss_bytes: int
+
+    def __post_init__(self) -> None:
+        if isinstance(self.pid, bool) or not isinstance(self.pid, int):
+            raise TypeError("pid must be an integer")
+        if self.pid <= 0:
+            raise ValueError("pid must be positive")
+        if not isinstance(self.name, str):
+            raise TypeError("process name must be a string")
+        if not self.name:
+            raise ValueError("process name must not be empty")
+        if len(self.name) > PROCESS_NAME_MAX_LENGTH:
+            raise ValueError("process name must be at most 128 characters")
+        if self.cpu_percent is not None and (
+            not math.isfinite(self.cpu_percent) or self.cpu_percent < 0.0
+        ):
+            raise ValueError("cpu percent must be finite and non-negative")
+        if isinstance(self.memory_rss_bytes, bool) or not isinstance(self.memory_rss_bytes, int):
+            raise TypeError("memory rss must be an integer")
+        if self.memory_rss_bytes < 0:
+            raise ValueError("memory rss must be non-negative")
+
+
+@dataclass(frozen=True)
+class ProcessList:
+    """Bounded process rows from one observation plus the skipped count.
+
+    ``skipped`` counts processes that disappeared, were zombies or were not
+    readable. Rows are capped by the collector; the cap itself is not a
+    partial result.
+    """
+
+    items: tuple[ProcessInfo, ...]
+    skipped: int
+
+    def __post_init__(self) -> None:
+        if isinstance(self.skipped, bool) or not isinstance(self.skipped, int):
+            raise TypeError("skipped must be an integer")
+        if self.skipped < 0:
+            raise ValueError("skipped must be non-negative")
 
 
 @dataclass(frozen=True)
@@ -172,3 +220,4 @@ class SystemSnapshot:
     network: MetricResult[NetCounters]
     timestamp_monotonic: MonotonicTimestamp
     timestamp_utc: UtcTimestamp
+    processes: MetricResult[ProcessList] | None = None
