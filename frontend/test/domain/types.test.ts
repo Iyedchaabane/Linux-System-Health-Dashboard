@@ -10,8 +10,14 @@ describe("domain types", () => {
     expect(PROTOCOL_VERSION).toBe(1);
   });
 
-  it("lists cpu and memory groups", () => {
-    expect(METRIC_GROUPS).toEqual(["cpu", "memory", "disk", "network"]);
+  it("lists the implemented metric groups", () => {
+    expect(METRIC_GROUPS).toEqual([
+      "cpu",
+      "memory",
+      "disk",
+      "network",
+      "processes",
+    ]);
   });
 
   it("metric state list has 7 entries", () => {

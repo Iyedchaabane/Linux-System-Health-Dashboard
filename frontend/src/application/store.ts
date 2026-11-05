@@ -7,13 +7,19 @@ import type {
   DiskSnapshot,
   MemorySnapshot,
   NetworkSnapshot,
+  ProcessList,
   MetricGroup,
 } from "../domain/types";
 import { metricStateFromGroupState, type MetricState } from "../domain/metricState";
+import {
+  computeNetworkRates,
+  isValidCounters,
+  type NetworkCountersSample,
+} from "../domain/network";
 
 export type StoredSnapshot = {
   groups: Record<string, GroupState<unknown>>;
-  seq: number;
+  seq: number | null;
   ts: number;
 };
 
@@ -29,24 +35,30 @@ export type DashboardState = {
     memory: MetricState<MemorySnapshot>;
     disk: MetricState<DiskSnapshot>;
     network: MetricState<NetworkSnapshot>;
+    processes: MetricState<ProcessList>;
   };
-  cpuHistory: number[];
-  memoryHistory: number[];
-  diskHistory: number[];
-  networkHistory: number[];
+  cpuHistory: (number | null)[];
+  memoryHistory: (number | null)[];
+  diskHistory: (number | null)[];
+  networkHistory: (number | null)[];
+  networkTxHistory: (number | null)[];
+  /** Last cumulative counters plus monotonic receipt time, used to derive rates. */
+  networkSample: NetworkCountersSample | null;
   seqGaps: number[];
   maxSeqSeen: number;
 
   setConnectionMeta: (meta: { intervalMs?: number; droppedCount?: number; invalidCount?: number }) => void;
   setConnectionState: (state: ConnectionStatus) => void;
   markLastMessage: (timestamp?: number) => void;
-  ingestSnapshot: (snapshot: StoredSnapshot) => void;
+  beginEpoch: () => void;
+  ingestRestSnapshot: (snapshot: Omit<StoredSnapshot, "seq">) => void;
+  ingestSnapshot: (snapshot: StoredSnapshot, receivedAt?: number) => void;
   markStale: () => void;
   markDisconnected: (fatal?: boolean) => void;
   reset: () => void;
 };
 
-const INITIAL_METRIC_STATE = { cpu: { status: "loading" } as MetricState<CpuSnapshot>, memory: { status: "loading" } as MetricState<MemorySnapshot>, disk: { status: "loading" } as MetricState<DiskSnapshot>, network: { status: "loading" } as MetricState<NetworkSnapshot> };
+const INITIAL_METRIC_STATE = { cpu: { status: "loading" } as MetricState<CpuSnapshot>, memory: { status: "loading" } as MetricState<MemorySnapshot>, disk: { status: "loading" } as MetricState<DiskSnapshot>, network: { status: "loading" } as MetricState<NetworkSnapshot>, processes: { status: "loading" } as MetricState<ProcessList> };
 
 export const useDashboardStore = create<DashboardState>((set, get) => ({
   connectionState: "connecting",
@@ -60,8 +72,10 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   memoryHistory: [] as number[],
   diskHistory: [] as number[],
   networkHistory: [] as number[],
+  networkTxHistory: [],
+  networkSample: null,
   seqGaps: [],
-  maxSeqSeen: 0,
+  maxSeqSeen: -1,
 
   setConnectionMeta: (meta) =>
     set((s) => ({
@@ -74,14 +88,17 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
 
   markLastMessage: (timestamp) => set({ lastMessageAt: timestamp ?? Date.now() }),
 
-  ingestSnapshot: (snapshot) => {
+  beginEpoch: () => set({ maxSeqSeen: -1, seqGaps: [], networkSample: null, connectionState: "connecting" }),
+
+  // REST has no connection-local sequence and cannot establish a live stream.
+  ingestRestSnapshot: (snapshot) => get().ingestSnapshot({ ...snapshot, seq: null }),
+
+  ingestSnapshot: (snapshot, receivedAt) => {
+    const receivedAtMs =
+      receivedAt ?? (typeof performance !== "undefined" ? performance.now() : Date.now());
     const previousMax = get().maxSeqSeen;
     // Reject older or duplicate snapshots without modifying state.
-    if (previousMax > 0 && snapshot.seq < previousMax) {
-      return;
-    }
-    // A duplicate sequence number must not overwrite newer data.
-    if (previousMax > 0 && snapshot.seq === previousMax) {
+    if (snapshot.seq !== null && snapshot.seq <= previousMax) {
       return;
     }
     const CPU_GROUP: MetricGroup = "cpu";
@@ -92,16 +109,20 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     const memoryRaw = (groups["memory"] ?? groups[MEMORY_GROUP]) as GroupState<MemorySnapshot> | undefined;
     const diskRaw = (groups["disk"]) as GroupState<DiskSnapshot> | undefined;
     const networkRaw = (groups["network"]) as GroupState<NetworkSnapshot> | undefined;
+    const processesRaw = (groups["processes"]) as GroupState<ProcessList> | undefined;
 
     const cpuState = cpuRaw ? metricStateFromGroupState<CpuSnapshot>(cpuRaw) : null;
     const memoryState = memoryRaw ? metricStateFromGroupState<MemorySnapshot>(memoryRaw) : null;
     const diskState = diskRaw ? metricStateFromGroupState<DiskSnapshot>(diskRaw) : null;
     const networkState = networkRaw ? metricStateFromGroupState<NetworkSnapshot>(networkRaw) : null;
+    const processesState = processesRaw
+      ? metricStateFromGroupState<ProcessList>(processesRaw)
+      : null;
 
     // sequence gap detection
     const seqGaps: number[] = [];
     const maxSeqSeen = get().maxSeqSeen;
-    if (maxSeqSeen > 0 && snapshot.seq > maxSeqSeen + 1) {
+    if (snapshot.seq !== null && maxSeqSeen >= 0 && snapshot.seq > maxSeqSeen + 1) {
       for (let seq = maxSeqSeen + 1; seq < snapshot.seq; seq += 1) {
         seqGaps.push(seq);
       }
@@ -132,14 +153,26 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     })();
 
     set((s) => {
-      const nextCpu = cpuVal === undefined ? s.cpuHistory : [...s.cpuHistory, cpuVal].slice(-60);
-      const nextMem = memVal === undefined ? s.memoryHistory : [...s.memoryHistory, memVal].slice(-60);
-      const nextDisk = diskVal === undefined ? s.diskHistory : [...s.diskHistory, diskVal].slice(-60);
-    const netRaw = groups["network"];
-    const netVal = (netRaw && netRaw.status === "ok" && netRaw.value && typeof (netRaw.value as { rx_bytes?: unknown }).rx_bytes === "number")
-      ? (netRaw.value as { rx_bytes: number }).rx_bytes
-      : undefined;
-    const nextNet = netVal === undefined ? s.networkHistory : [...s.networkHistory, netVal].slice(-60);
+      // Preserve missing readings and sequence gaps instead of connecting across them.
+      const append = (history: (number | null)[], value: number | undefined, changedSource = false) =>
+        [...history, ...(seqGaps.length > 0 || changedSource ? [null] : []), value !== undefined && Number.isFinite(value) ? value : null].slice(-60);
+      const netRaw = groups["network"];
+      const net = netRaw?.status === "ok" ? (netRaw.value as NetworkSnapshot | null) : null;
+      // Rates come from consecutive cumulative counters over monotonic time.
+      // Missing, reset or invalid intervals yield null (a gap), never zero.
+      const currentSample: NetworkCountersSample | null =
+        net && isValidCounters(net)
+          ? { rxBytes: net.rx_bytes, txBytes: net.tx_bytes, at: receivedAtMs }
+          : null;
+      const rates = computeNetworkRates(s.networkSample, currentSample);
+      const previousDisk = s.latestSnapshot?.groups.disk;
+      const diskChanged = previousDisk?.status === "ok" && diskRaw?.status === "ok" &&
+        (previousDisk.value as DiskSnapshot | null)?.device !== diskRaw.value?.device;
+      const nextCpu = append(s.cpuHistory, cpuVal);
+      const nextMem = append(s.memoryHistory, memVal);
+      const nextDisk = append(s.diskHistory, diskVal, diskChanged);
+      const nextNet = append(s.networkHistory, rates?.rxBytesPerSecond);
+      const nextTx = append(s.networkTxHistory, rates?.txBytesPerSecond);
       return {
       latestSnapshot: {
         groups: snapshot.groups,
@@ -147,18 +180,28 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
         ts: snapshot.ts,
       },
       metricStates: {
-        cpu: (cpuState ?? s.metricStates.cpu) as MetricState<CpuSnapshot>,
-        memory: (memoryState ?? s.metricStates.memory) as MetricState<MemorySnapshot>,
-        disk: (diskState ?? s.metricStates.disk) as MetricState<DiskSnapshot>,
-        network: (networkState ?? s.metricStates.network) as MetricState<NetworkSnapshot>,
+        cpu: (cpuState ?? { status: "unavailable", kind: "unsupported", reason: "No reading supplied for this metric." }) as MetricState<CpuSnapshot>,
+        memory: (memoryState ?? { status: "unavailable", kind: "unsupported", reason: "No reading supplied for this metric." }) as MetricState<MemorySnapshot>,
+        disk: (diskState ?? { status: "unavailable", kind: "unsupported", reason: "No reading supplied for this metric." }) as MetricState<DiskSnapshot>,
+        network: (networkState ?? { status: "unavailable", kind: "unsupported", reason: "No reading supplied for this metric." }) as MetricState<NetworkSnapshot>,
+        processes: (processesState ?? {
+          status: "unavailable",
+          kind: "unsupported",
+          reason: "The server did not include a processes group in this snapshot.",
+        }) as MetricState<ProcessList>,
       },
-      lastMessageAt: Date.now(),
+      lastMessageAt: snapshot.seq === null ? s.lastMessageAt : Date.now(),
+      connectionState: snapshot.seq === null ? s.connectionState : "open",
       cpuHistory: nextCpu,
       memoryHistory: nextMem,
       diskHistory: nextDisk,
       networkHistory: nextNet,
+      networkTxHistory: nextTx,
+      // A gap (unavailable group, counter reset) drops the baseline so the next
+      // reading starts a fresh interval instead of averaging across the outage.
+      networkSample: currentSample,
       seqGaps: [...s.seqGaps, ...seqGaps],
-      maxSeqSeen: Math.max(s.maxSeqSeen, snapshot.seq),
+      maxSeqSeen: snapshot.seq === null ? s.maxSeqSeen : snapshot.seq,
     };});
   },
 
@@ -174,7 +217,13 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       invalidCount: 0,
       latestSnapshot: null,
       metricStates: { ...INITIAL_METRIC_STATE },
+      cpuHistory: [],
+      memoryHistory: [],
+      diskHistory: [],
+      networkHistory: [],
+      networkTxHistory: [],
+      networkSample: null,
       seqGaps: [],
-      maxSeqSeen: 0,
+      maxSeqSeen: -1,
     }),
 }));

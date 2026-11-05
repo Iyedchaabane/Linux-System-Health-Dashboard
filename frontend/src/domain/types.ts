@@ -45,16 +45,39 @@ export interface NetworkSnapshot {
   tx_bytes: number;
 }
 
+/** One process row as sent on the wire. `cpu_percent` is null until measured. */
+export interface ProcessRow {
+  pid: number;
+  name: string;
+  cpu_percent: number | null;
+  memory_rss_bytes: number;
+}
+
+/** Bounded current process list; not a historical series. */
+export interface ProcessList {
+  items: ProcessRow[];
+  skipped: number;
+}
+
 /** Group states on the WebSocket/REST contract. */
 export type GroupState<TValue> =
   | { status: "ok"; value: TValue | null; partial: boolean }
   | { status: "unavailable"; kind: UnavailableKind; reason: string };
 
+/** Scalar metric groups rendered as cards. */
+export type ScalarMetricGroup = "cpu" | "memory" | "disk" | "network";
+
 /** Group names currently exposed by the backend. */
-export type MetricGroup = "cpu" | "memory" | "disk" | "network";
+export type MetricGroup = ScalarMetricGroup | "processes";
 
 /** Implemented metric groups. */
-export const METRIC_GROUPS: readonly MetricGroup[] = ["cpu", "memory", "disk", "network"] as const;
+export const METRIC_GROUPS: readonly MetricGroup[] = [
+  "cpu",
+  "memory",
+  "disk",
+  "network",
+  "processes",
+] as const;
 
 /** The protocol version sent on every message. */
 export const PROTOCOL_VERSION = 1 as const;

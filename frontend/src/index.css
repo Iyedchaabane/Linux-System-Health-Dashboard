@@ -2,10 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@import "./presentation/theme/tokens/primitives.css";
-@import "./presentation/theme/tokens/semantic.css";
-@import "./presentation/theme/tokens/semantic.dark.css";
-
 :root {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
@@ -34,3 +30,15 @@ body {
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum" 1;
 }
+
+/* Compact shell dimensions use the existing spacing scale. */
+.dashboard-sidebar { width: calc(var(--space-16) * 3); }
+.dashboard-content { max-width: calc(var(--space-16) * 28); margin-inline: auto; }
+.metric-history { height: calc(var(--space-16) + var(--space-8)); }
+a:focus-visible, button:focus-visible, summary:focus-visible, [tabindex]:focus-visible {
+  outline: 2px solid rgb(var(--color-focus-ring));
+  outline-offset: 2px;
+}
+button, summary { min-height: calc(var(--space-12) - var(--space-1)); }
+
+.overview-metric { height: 100%; min-height: calc(var(--space-16) * 5); }

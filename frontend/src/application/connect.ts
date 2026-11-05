@@ -1,5 +1,5 @@
 import { MetricsSocket } from "../infrastructure/ws/MetricsSocket";
-import { parseServerMessage } from "../infrastructure/ws/schemas";
+import { SnapshotGroupsSchema, SnapshotMetaSchema, z } from "../infrastructure/ws/schemas";
 import { useDashboardStore } from "./store";
 import type { GroupState } from "../domain/types";
 
@@ -11,35 +11,24 @@ export type DashboardConnectionOptions = {
 
 export type DashboardConnection = { dispose: () => void };
 
-function inferSnapshot(payload: unknown): {
-  groups: Record<string, unknown>;
-  seq: number;
-  ts: number;
-} | null {
-  if (!payload || typeof payload !== "object") return null;
-  const obj = payload as Record<string, unknown>;
-  const groups = obj.groups;
-  if (!groups || typeof groups !== "object") return null;
-  const seq = (payload as { seq?: unknown }).seq;
-  const ts = (payload as { ts?: unknown }).ts;
-  if (typeof seq !== "number" || typeof ts !== "number") return null;
-  return { groups: groups as Record<string, unknown>, seq, ts };
-}
+const RestSnapshotSchema = z.object({
+  ts: z.number().int().min(0),
+  groups: SnapshotGroupsSchema,
+  meta: SnapshotMetaSchema.nullable().optional(),
+});
 
 export function connectDashboard(options: DashboardConnectionOptions): DashboardConnection {
-  const recoverSnapshot: () => Promise<void> | void = async () => {
+  let disposed = false;
+  let snapshotRevision = 0;
+  const recoverSnapshot = async (isCurrent: () => boolean): Promise<void> => {
     if (!options.fetchSnapshot) return;
+    const revision = snapshotRevision;
     try {
       const payload = await options.fetchSnapshot();
-      const asEnvelope =
-        payload && typeof payload === "object" && "v" in payload && "type" in payload
-          ? parseServerMessage(payload)
-          : null;
-      const snapshot = asEnvelope?.type === "snapshot"
-        ? inferSnapshot(asEnvelope.data)
-        : inferSnapshot(payload);
-      if (snapshot) {
-        useDashboardStore.getState().ingestSnapshot(snapshot as never);
+      if (disposed || !isCurrent() || revision !== snapshotRevision) return;
+      const snapshot = RestSnapshotSchema.safeParse(payload);
+      if (snapshot.success) {
+        useDashboardStore.getState().ingestRestSnapshot(snapshot.data);
       }
     } catch {
       // recovery failure should not crash the socket loop
@@ -51,13 +40,16 @@ export function connectDashboard(options: DashboardConnectionOptions): Dashboard
     intervalMs: options.intervalMs ?? 1000,
     recover: recoverSnapshot,
     onMessage: (msg) => {
+      if (disposed) return;
       useDashboardStore.getState().markLastMessage();
       if (msg.type === "hello") {
+        useDashboardStore.getState().beginEpoch();
         const data = msg.data as { interval_ms?: number; groups?: string[] };
         if (typeof data?.interval_ms === "number") {
           useDashboardStore.getState().setConnectionMeta({ intervalMs: data.interval_ms });
         }
       } else if (msg.type === "snapshot") {
+        snapshotRevision += 1;
         const data = msg.data as { groups?: Record<string, unknown>; meta?: { dropped_since_last?: number | null } };
         useDashboardStore.getState().ingestSnapshot({
           groups: (data?.groups ?? {}) as Record<string, GroupState<unknown>>,
@@ -72,12 +64,14 @@ export function connectDashboard(options: DashboardConnectionOptions): Dashboard
       }
     },
     onStateChange: (state, reason) => {
+      if (disposed) return;
       switch (state) {
         case "connecting":
           useDashboardStore.getState().setConnectionState("connecting");
           break;
         case "open":
-          useDashboardStore.getState().setConnectionState("open");
+          // Transport open (or hello) is not a fresh metric reading.
+          useDashboardStore.getState().setConnectionState("connecting");
           break;
         case "stale":
           useDashboardStore.getState().setConnectionState("stale");
@@ -96,6 +90,7 @@ export function connectDashboard(options: DashboardConnectionOptions): Dashboard
       void reason;
     },
     onInvalidMessage: (count) => {
+      if (disposed) return;
       useDashboardStore.getState().setConnectionMeta({ invalidCount: count });
     },
     onReconnectAttempt: () => {
@@ -107,6 +102,7 @@ export function connectDashboard(options: DashboardConnectionOptions): Dashboard
 
   return {
     dispose: () => {
+      disposed = true;
       socket.dispose();
     },
   };

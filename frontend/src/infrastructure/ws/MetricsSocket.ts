@@ -17,7 +17,7 @@ export type MetricsSocketOptions = {
   onStateChange?: (state: ConnectionStatus, reason?: string) => void;
   onInvalidMessage?: (count: number) => void;
   onReconnectAttempt?: () => void;
-  recover?: () => void | Promise<void>;
+  recover?: (isCurrent: () => boolean) => void | Promise<void>;
 };
 
 const DEFAULT_INTERVAL_MS = 1000;
@@ -30,6 +30,10 @@ export class MetricsSocket {
   private healthySince = 0;
   private needsRecovery = false;
   private recoveryInFlight = false;
+  private epoch = 0;
+  private lastSeq = -1;
+  private receivedHello = false;
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private staleTimer: ReturnType<typeof setTimeout> | null = null;
   private stopped = false;
   private intervalMs = DEFAULT_INTERVAL_MS;
@@ -73,27 +77,40 @@ export class MetricsSocket {
   }
 
   private _cleanup(): void {
+    this.epoch += 1;
     this._cleanStaleTimer();
+    if (this.reconnectTimer !== null) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
     if (this.ws) {
+      const ws = this.ws;
+      this.ws = null;
       try {
-        this.ws.close(1000, "dispose");
+        ws.close(1000, "dispose");
       } catch {
         /* ignore */
       }
-      this.ws = null;
     }
   }
 
   private _open(): void {
     if (this.stopped) return;
+    this._cleanup();
+    const epoch = this.epoch;
+    this.lastSeq = -1;
+    this.receivedHello = false;
+    this.recoveryInFlight = false;
     this._setState("connecting");
     const url = this.options.url;
     // Native WebSocket accepts protocols as second argument
     const ws = new WebSocket(url, "monitor.v1");
     this.ws = ws;
     this.ws.binaryType = "arraybuffer";
+    const isCurrent = () => !this.stopped && this.epoch === epoch && this.ws === ws;
 
     ws.onopen = () => {
+      if (!isCurrent()) return;
       this.healthySince = Date.now();
       this._setState("open");
       const shouldRecover = this.needsRecovery;
@@ -103,12 +120,12 @@ export class MetricsSocket {
       if (this.recoveryInFlight) return;
       this.recoveryInFlight = true;
       try {
-        const result = this.options.recover();
+        const result = this.options.recover(isCurrent);
         if (result && typeof (result as Promise<void>).then === "function") {
           (result as Promise<void>)
             .catch(() => undefined)
             .finally(() => {
-              this.recoveryInFlight = false;
+              if (isCurrent()) this.recoveryInFlight = false;
             });
         } else {
           this.recoveryInFlight = false;
@@ -119,7 +136,7 @@ export class MetricsSocket {
     };
 
     ws.onmessage = (event: MessageEvent) => {
-      this._cleanStaleTimer();
+      if (!isCurrent()) return;
       let raw: unknown = null;
       try {
         raw = JSON.parse(String(event.data));
@@ -129,6 +146,17 @@ export class MetricsSocket {
       }
       try {
         const msg = parseServerMessage(raw);
+        if (!this.receivedHello) {
+          if (msg.type !== "hello") {
+            this._handleInvalid();
+            return;
+          }
+          this.receivedHello = true;
+        } else if (msg.type === "hello") {
+          return;
+        }
+        if (msg.seq <= this.lastSeq) return;
+        this.lastSeq = msg.seq;
         this._handleMessage(msg);
       } catch {
         this._handleInvalid();
@@ -138,11 +166,9 @@ export class MetricsSocket {
     };
 
     ws.onclose = (event: CloseEvent) => {
+      if (!isCurrent()) return;
       this._cleanStaleTimer();
-      if (event.code === 1000 || this.stopped) {
-        this._setState("closed", `${event.code}`);
-        return;
-      }
+      this.ws = null;
       if (isFatalCode(event.code)) {
         this._setState("fatal", `${event.code}`);
         return;
@@ -163,7 +189,9 @@ export class MetricsSocket {
       }
       this.retryCount += 1;
       this.options.onReconnectAttempt?.();
-      setTimeout(() => this._open(), delayMs);
+      this.reconnectTimer = setTimeout(() => {
+        if (!this.stopped && this.epoch === epoch) this._open();
+      }, delayMs);
     };
 
     ws.onerror = () => {
@@ -172,14 +200,15 @@ export class MetricsSocket {
   }
 
   private _handleMessage(msg: ServerMessage): void {
-    // Track seq gaps by comparing with previous seq
-    // Hello/bye are not seq'd for gap concerns (hello seq 0)
-    // Update interval from hello
+    // Hello configures transport timing; only a snapshot refreshes metrics.
     if (msg.type === "hello") {
       const data = msg.data as { interval_ms?: number };
       if (typeof data?.interval_ms === "number") {
         this.intervalMs = data.interval_ms;
       }
+    }
+    if (msg.type === "snapshot" && this.state === "stale") {
+      this._setState("open");
     }
     this.options.onMessage?.(msg);
   }
@@ -200,11 +229,14 @@ export class MetricsSocket {
     const interval = this.intervalMs;
     const staleMs = interval * 2;
     const reconnectMs = interval * 4;
+    const epoch = this.epoch;
     // At staleMs -> mark stale
     const timer = setTimeout(() => {
+      if (this.stopped || this.epoch !== epoch || !this.ws) return;
       this._setState("stale");
       // At reconnectMs -> close and reconnect
       const timer2 = setTimeout(() => {
+        if (this.stopped || this.epoch !== epoch) return;
         if (this.ws) {
           this.ws.close(1000, "stale connection");
         }

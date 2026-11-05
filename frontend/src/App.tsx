@@ -1,22 +1,69 @@
 import React from "react";
+import { NavLink, Route, Routes } from "react-router-dom";
 import { useDashboardStore } from "./application/store";
-import { MetricCard } from "./presentation/components/MetricCard";
 import { connectDashboard } from "./application/connect";
-import { TimeSeriesChart } from "./presentation/components/TimeSeriesChart";
 import { ThemeToggle } from "./presentation/theme/ThemeToggle";
-import { useTheme } from "./presentation/theme/ThemeProvider";
+import {
+  Activity,
+  CircleAlert,
+  Cpu,
+  HardDrive,
+  LayoutDashboard,
+  MemoryStick,
+  Network,
+  Radio,
+} from "lucide-react";
+import { OverviewPage } from "./presentation/pages/OverviewPage";
+import { CpuPage } from "./presentation/pages/CpuPage";
+import { MemoryPage } from "./presentation/pages/MemoryPage";
+import { NetworkPage } from "./presentation/pages/NetworkPage";
+import { DisksPage } from "./presentation/pages/DisksPage";
 
 function StatusPill() {
   const state = useDashboardStore((s) => s.connectionState);
+  const labels = {
+    open: "Live",
+    connecting: "Connecting",
+    stale: "Stale",
+    disconnected: "Disconnected · reconnecting",
+    fatal: "Connection error",
+  };
   const color =
     state === "open"
-      ? "bg-ok text-ok"
+      ? "bg-ok/10 text-ok"
       : state === "stale"
-        ? "bg-warn text-warn"
+        ? "bg-warn/10 text-warn"
         : state === "fatal" || state === "disconnected"
-          ? "bg-critical text-critical"
-          : "bg-muted text-muted";
-  return <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${color}`}>{state}</span>;
+          ? "bg-critical/10 text-critical"
+          : "bg-surface-alt text-muted";
+  const Icon = state === "open" ? Radio : CircleAlert;
+  return (
+    <span
+      role="status"
+      className={`inline-flex items-center gap-2 rounded-full px-2 py-1 text-xs font-medium ${color}`}
+    >
+      <Icon aria-hidden="true" className="h-4 w-4 shrink-0" />
+      {labels[state]}
+    </span>
+  );
+}
+
+function ConnectionNotice() {
+  const state = useDashboardStore((s) => s.connectionState);
+  if (state === "open" || state === "connecting") return null;
+  return (
+    <div className="mb-4 flex items-center gap-2 rounded-md border border-border-strong bg-surface p-3 text-sm text-warn">
+      <CircleAlert aria-hidden="true" className="h-4 w-4 shrink-0" />
+      <span>
+        {state === "fatal"
+          ? "Connection failed. Reload to try again."
+          : state === "stale"
+            ? "Updates are delayed."
+            : "Connection lost. Reconnecting…"}{" "}
+        Retained readings are not live.
+      </span>
+    </div>
+  );
 }
 
 function LastUpdated() {
@@ -26,115 +73,116 @@ function LastUpdated() {
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, []);
-  if (!last) return <span className="text-xs text-muted">Waiting for updates…</span>;
+  if (!last)
+    return <span className="text-xs text-muted">Waiting for updates…</span>;
   const seconds = Math.max(0, Math.round((now - last) / 1000));
-  return <span className="text-xs text-muted" aria-live="polite">Updated {seconds}s ago</span>;
+  return <span className="text-xs text-muted">Updated {seconds}s ago</span>;
 }
 
+const navItems = [
+  { to: "/", label: "Overview", icon: LayoutDashboard },
+  { to: "/cpu", label: "CPU", icon: Cpu },
+  { to: "/memory", label: "Memory", icon: MemoryStick },
+  { to: "/network", label: "Network", icon: Network },
+  { to: "/disks", label: "Disks", icon: HardDrive },
+];
+
 export default function App() {
-  const { theme } = useTheme();
   React.useEffect(() => {
-    const host = import.meta.env.VITE_E2E === "true" ? "127.0.0.1:8080" : window.location.host;
-    const conn = connectDashboard({ socketUrl: `${window.location.protocol === "https:" ? "wss" : "ws"}://${host}/ws/v1/metrics`, fetchSnapshot: async () => {
-      const r = await fetch("/api/v1/snapshot");
-      return r.json();
-    } });
+    const e2eApiHost = import.meta.env.VITE_E2E_API as string | undefined;
+    const host =
+      e2eApiHost ??
+      (import.meta.env.VITE_E2E === "true"
+        ? "127.0.0.1:8080"
+        : window.location.host);
+    const snapshotUrl = e2eApiHost
+      ? `http://${e2eApiHost}/api/v1/snapshot`
+      : "/api/v1/snapshot";
+    const conn = connectDashboard({
+      socketUrl: `${window.location.protocol === "https:" ? "wss" : "ws"}://${host}/ws/v1/metrics`,
+      fetchSnapshot: async () => {
+        const r = await fetch(snapshotUrl);
+        return r.json();
+      },
+    });
     return () => conn.dispose();
   }, []);
-  void theme;
   return (
-    <div className="min-h-screen bg-bg text-text">
-      <div className="flex">
-        {/* Sidebar */}
-        <aside className="hidden w-64 shrink-0 border-r border-border-subtle bg-surface lg:block">
-          <div className="px-4 py-6 text-lg font-semibold text-primary">Health Dashboard</div>
-          <nav className="space-y-1 px-2">
-            {["Overview", "CPU", "Memory", "Network", "Disks"].map((item) => (
-              <div key={item} className="rounded-md px-3 py-2 text-sm text-muted hover:bg-surface-alt hover:text-text">
-                {item}
-              </div>
+    <div className="flex min-h-screen flex-col bg-bg text-text">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:block focus:p-3"
+      >
+        Skip to content
+      </a>
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border-subtle bg-surface px-4 py-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <Activity
+            aria-hidden="true"
+            className="h-6 w-6 shrink-0 text-primary"
+          />
+          <h1 className="text-base font-semibold">
+            Linux System Health Dashboard
+          </h1>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <StatusPill />
+          <LastUpdated />
+          <ThemeToggle />
+        </div>
+      </header>
+      <div className="flex flex-1">
+        <aside className="dashboard-sidebar hidden shrink-0 border-r border-border-subtle bg-surface p-3 lg:block">
+          <p className="mb-3 px-3 text-xs font-medium text-muted">MONITOR</p>
+          <nav className="space-y-1" aria-label="Primary">
+            {navItems.map(({ to, label, icon: Icon }) => (
+              <NavLink
+                key={to}
+                to={to}
+                end={to === "/"}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 rounded-md px-3 py-3 text-sm ${isActive ? "bg-surface-alt font-semibold text-primary" : "text-muted hover:bg-surface-alt hover:text-text"}`
+                }
+              >
+                <Icon aria-hidden="true" className="h-4 w-4 shrink-0" />
+                {label}
+              </NavLink>
             ))}
           </nav>
         </aside>
-
-        {/* Main area */}
-        <div className="flex min-h-screen flex-1 flex-col">
-          <header className="flex items-center justify-between border-b border-border-subtle bg-surface px-4 py-3">
-            <h1 className="text-xl font-semibold text-primary">Linux System Health Dashboard</h1>
-            <div className="flex items-center gap-3">
-              <StatusPill />
-              <LastUpdated />
-              <ThemeToggle />
-            </div>
-          </header>
-
-          <main className="flex-1 p-4 md:p-6">
-            <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <MetricCardImpl label="CPU" unit="%" />
-              <MetricCardImpl label="Memory" unit="%" />
-              <MetricCardImpl label="Disk" unit="%" />
-              <MetricCardImpl label="Network" unit="B" />
-            </section>
-            <section className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
-              <TimeSeriesChart
-                title="CPU usage"
-                unit="%"
-                data={useDashboardStore((s) => s.cpuHistory)}
-              />
-              <TimeSeriesChart
-                title="Memory used"
-                unit="%"
-                data={useDashboardStore((s) => s.memoryHistory)}
-              />
-              <TimeSeriesChart
-                title="Disk"
-                unit="%"
-                data={useDashboardStore((s) => s.diskHistory)}
-              />
-              <TimeSeriesChart
-                title="Network rx"
-                unit="B"
-                data={useDashboardStore((s) => s.networkHistory)}
-              />
-            </section>
-
-            <section className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
-              <div className="rounded-card border border-border-subtle bg-surface p-4">
-                <h2 className="text-base font-medium text-text">CPU trend (placeholder)</h2>
-                <div className="mt-4 h-48 rounded-md border border-border-subtle bg-surface-alt" />
-              </div>
-              <div className="rounded-card border border-border-subtle bg-surface p-4">
-                <h2 className="text-base font-medium text-text">Memory trend (placeholder)</h2>
-                <div className="mt-4 h-48 rounded-md border border-border-subtle bg-surface-alt" />
-              </div>
-            </section>
-          </main>
-        </div>
+        <main
+          id="main-content"
+          tabIndex={-1}
+          className="dashboard-content min-w-0 flex-1 p-4"
+        >
+          <nav
+            className="mb-4 flex flex-wrap gap-1 lg:hidden"
+            aria-label="Primary mobile"
+          >
+            {navItems.map(({ to, label, icon: Icon }) => (
+              <NavLink
+                key={to}
+                to={to}
+                end={to === "/"}
+                className={({ isActive }) =>
+                  `flex items-center gap-2 rounded-md px-3 py-3 text-sm ${isActive ? "bg-surface-alt font-semibold text-primary" : "text-muted hover:bg-surface-alt"}`
+                }
+              >
+                <Icon aria-hidden="true" className="h-4 w-4" />
+                {label}
+              </NavLink>
+            ))}
+          </nav>
+          <ConnectionNotice />
+          <Routes>
+            <Route path="/" element={<OverviewPage />} />
+            <Route path="/cpu" element={<CpuPage />} />
+            <Route path="/memory" element={<MemoryPage />} />
+            <Route path="/network" element={<NetworkPage />} />
+            <Route path="/disks" element={<DisksPage />} />
+          </Routes>
+        </main>
       </div>
     </div>
   );
-}
-
-
-function MetricCardImpl({ label, unit }: { label: string; unit: string }): React.JSX.Element {
-  const groupKey = label === "CPU" ? "cpu" : label === "Memory" ? "memory" : label === "Disk" ? "disk" : label === "Network" ? "network" : "memory";
-  const metricState = useDashboardStore((s) => s.metricStates[groupKey]);
-  const latest = useDashboardStore((s) => s.latestSnapshot);
-  let value: number | null = null;
-  let detail = "";
-  const groupSym = label === "CPU" ? "cpu" : label === "Memory" ? "memory" : "disk";
-  if (latest && (latest.groups[groupSym])?.status === "ok") {
-    const group = latest.groups[groupSym];
-    if (group && "value" in group && group.value && typeof group.value === "object") {
-      const g = group.value as Record<string, number>;
-      const v = g.used_percent ?? g.cpu_total ?? g.percent ?? g.rx_bytes ?? null;
-      if (typeof v === "number") value = v;
-      if (label === "Memory" && typeof g.total === "number" && typeof g.available === "number") {
-        detail = `${g.available} of ${g.total}`;
-      } else if (label === "Disk" && typeof g.total === "number" && typeof g.used === "number") {
-        detail = `${g.used} of ${g.total}`;
-      }
-    }
-  }
-  return <MetricCard title={label} unit={unit} metricState={metricState} value={value} detail={detail} />;
 }
