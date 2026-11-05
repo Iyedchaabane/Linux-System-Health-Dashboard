@@ -186,7 +186,7 @@ async def test_readyz_returns_not_ready_error_when_snapshot_is_stale() -> None:
             memory=Ok(_ok_memory()),
             disk=Unavailable(kind=UnavailableKind.TRANSIENT, reason="warming"),
             network=Unavailable(kind=UnavailableKind.TRANSIENT, reason="warming"),
-            timestamp_monotonic=MonotonicTimestamp(seconds=__import__("time").monotonic() - 100.0),
+            timestamp_monotonic=_now(0.0),
             timestamp_utc=_utc_now(10.0),
         )
     )
