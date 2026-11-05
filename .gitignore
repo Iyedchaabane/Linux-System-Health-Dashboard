@@ -95,3 +95,6 @@ graphify-out/
 docs/design-system/dashboard-brief.md
 docs/design-system/dashboard-current.png
 docs/design-system/dashboard-target.png
+
+#codex
+.codex/*
