@@ -26,6 +26,37 @@ export const GroupStateSchema = z.discriminatedUnion("status", [
   GroupStateUnavailableSchema,
 ]);
 
+/** One process row; `cpu_percent` stays null until it has been measured. */
+export const ProcessRowSchema = z.strictObject({
+  pid: z.number().int().min(1),
+  name: z.string().refine((value) => Array.from(value).length <= 128, {
+    message: "Process name must contain at most 128 Unicode code points",
+  }),
+  cpu_percent: z.number().finite().min(0).nullable(),
+  memory_rss_bytes: z.number().int().min(0),
+});
+
+/** Bounded process list carried by the optional `processes` group. */
+export const ProcessesValueSchema = z.strictObject({
+  items: z.array(ProcessRowSchema),
+  skipped: z.number().int().min(0),
+});
+
+export const ProcessesGroupStateOkSchema = z.strictObject({
+  status: z.literal("ok"),
+  partial: z.boolean(),
+  value: ProcessesValueSchema,
+});
+
+export const ProcessesGroupStateSchema = z.discriminatedUnion("status", [
+  ProcessesGroupStateOkSchema,
+  z.strictObject({
+    status: z.literal("unavailable"),
+    kind: UnavailableKindSchema,
+    reason: z.string().min(1).max(512),
+  }),
+]);
+
 /** Hello limits. */
 export const HelloLimitsSchema = z.object({
   max_clients: z.number().int().min(1),
@@ -61,7 +92,7 @@ export const ErrorDataSchema = z.object({
 });
 
 /** ping/pong payloads are the literal name. */
-export const PingDataSchema = z.object({
+export const PingDataSchema = z.strictObject({
   type: z.literal("ping").default("ping"),
 });
 
@@ -74,10 +105,18 @@ export const SnapshotMetaSchema = z.object({
   dropped_since_last: z.number().int().min(0).optional(),
 });
 
+/**
+ * Groups are a free-form record on the wire; `processes` is optional but, when
+ * present, is validated against its strict typed shape.
+ */
+export const SnapshotGroupsSchema = z
+  .record(z.string(), GroupStateSchema)
+  .and(z.object({ processes: ProcessesGroupStateSchema.optional() }));
+
 /** Snapshot payload. */
 export const SnapshotDataSchema = z.object({
-  type: z.literal("snapshot").default("snapshot"),
-  groups: z.record(z.string(), GroupStateSchema),
+  type: z.literal("snapshot"),
+  groups: SnapshotGroupsSchema,
   meta: SnapshotMetaSchema.nullable().optional(),
 });
 

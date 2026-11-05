@@ -1,0 +1,21 @@
+{
+  "v": 1,
+  "type": "ping",
+  "seq": 3,
+  "ts": 1000,
+  "data": {
+    "type": "ping",
+    "groups": {
+      "cpu": {
+        "status": "ok",
+        "value": {
+          "cpu_total": 12.5
+        },
+        "partial": false
+      }
+    },
+    "meta": {
+      "dropped_since_last": 0
+    }
+  }
+}

@@ -4,6 +4,7 @@
   "seq": 2,
   "ts": 1767225602500,
   "data": {
+    "type": "snapshot",
     "groups": {
       "cpu": { "status": "ok", "value": { "cpu_total": 12.5 }, "partial": false },
       "memory": { "status": "ok", "value": { "total": 1, "available": 2, "used_percent": 50.0 }, "partial": false }

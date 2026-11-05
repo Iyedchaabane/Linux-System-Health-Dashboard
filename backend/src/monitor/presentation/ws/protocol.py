@@ -5,7 +5,19 @@ from __future__ import annotations
 from enum import StrEnum
 from typing import Annotated, Any, Literal, TypeAlias
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import (
+    BaseModel,
+    BeforeValidator,
+    ConfigDict,
+    Field,
+    GetJsonSchemaHandler,
+    GetPydanticSchema,
+    TypeAdapter,
+    ValidationInfo,
+    field_validator,
+)
+from pydantic.json_schema import JsonSchemaValue
+from pydantic_core import CoreSchema
 
 from monitor.domain.types import UnavailableKind
 
@@ -69,7 +81,9 @@ class ErrorData(BaseModel):
 
 
 class PingData(BaseModel):
-    """Ping payload."""
+    """Ping payload; unknown extra fields are rejected."""
+
+    model_config = ConfigDict(extra="forbid")
 
     type: Literal["ping"] = "ping"
 
@@ -95,6 +109,65 @@ GroupState: TypeAlias = Annotated[
 ]
 
 
+class ProcessRow(BaseModel):
+    """One namespace-visible process; 100% CPU means one logical CPU."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    pid: int = Field(gt=0, strict=True)
+    name: str = Field(max_length=128, strict=True)
+    cpu_percent: Annotated[float, Field(ge=0, allow_inf_nan=False, strict=True)] | None
+    memory_rss_bytes: int = Field(ge=0, strict=True)
+
+
+class ProcessesValue(BaseModel):
+    """Bounded current process list, not a historical series."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    items: list[ProcessRow]
+    skipped: int = Field(ge=0, strict=True)
+
+
+class ProcessesStateOk(BaseModel):
+    """Typed successful processes group."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    status: Literal["ok"]
+    partial: bool = Field(strict=True)
+    value: ProcessesValue
+
+
+ProcessesState: TypeAlias = Annotated[
+    ProcessesStateOk | GroupStateUnavailable, Field(discriminator="status")
+]
+_processes_adapter = TypeAdapter(ProcessesState)
+
+
+def _validate_processes_group(value: Any) -> Any:
+    """Validate the named group without changing existing dictionary consumers."""
+    if isinstance(value, dict) and "processes" in value:
+        group = value["processes"]
+        if isinstance(group, BaseModel):
+            group = group.model_dump()
+        _processes_adapter.validate_python(group)
+    return value
+
+
+def _groups_json_schema(schema: CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
+    result = handler(schema)
+    result["properties"] = {"processes": handler(_processes_adapter.core_schema)}
+    return result
+
+
+SnapshotGroups: TypeAlias = Annotated[
+    dict[str, GroupState],
+    BeforeValidator(_validate_processes_group),
+    GetPydanticSchema(get_pydantic_json_schema=_groups_json_schema),
+]
+
+
 class SnapshotMeta(BaseModel):
     """Snapshot metadata."""
 
@@ -104,8 +177,8 @@ class SnapshotMeta(BaseModel):
 class SnapshotData(BaseModel):
     """Snapshot payload."""
 
-    type: Literal["snapshot"] = "snapshot"
-    groups: dict[str, GroupState] = Field(default_factory=dict)
+    type: Literal["snapshot"]
+    groups: SnapshotGroups = Field(default_factory=dict)
     meta: SnapshotMeta | None = None
 
 
@@ -121,6 +194,14 @@ class ServerMessage(BaseModel):
     seq: int = Field(ge=0, strict=True)
     ts: int = Field(ge=0, strict=True)
     data: ServerMessageData
+
+    @field_validator("data", mode="before")
+    @classmethod
+    def validate_processes_payload(cls, value: Any, info: ValidationInfo) -> Any:
+        """Prevent the legacy payload union from bypassing processes validation."""
+        if info.data.get("type") == ServerMessageType.SNAPSHOT and isinstance(value, dict):
+            _validate_processes_group(value.get("groups"))
+        return value
 
 
 class ClientSubscribeData(BaseModel):

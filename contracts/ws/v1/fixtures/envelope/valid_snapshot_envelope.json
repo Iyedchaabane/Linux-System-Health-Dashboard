@@ -1,0 +1,75 @@
+{
+  "v": 1,
+  "type": "snapshot",
+  "seq": 1,
+  "ts": 1000,
+  "data": {
+    "type": "snapshot",
+    "groups": {
+      "cpu": {
+        "status": "ok",
+        "value": {
+          "cpu_total": 12.5,
+          "per_core": [
+            12.5
+          ],
+          "load_average": 0.0,
+          "core_count": 1,
+          "frequency_hz": null
+        },
+        "partial": false
+      },
+      "memory": {
+        "status": "ok",
+        "value": {
+          "total": 1024,
+          "available": 512,
+          "used_percent": 50.0
+        },
+        "partial": false
+      },
+      "disk": {
+        "status": "ok",
+        "value": {
+          "device": "/",
+          "total": 1024,
+          "used": 512,
+          "percent": 50.0
+        },
+        "partial": false
+      },
+      "network": {
+        "status": "ok",
+        "value": {
+          "rx_bytes": 1000,
+          "tx_bytes": 500
+        },
+        "partial": false
+      },
+      "processes": {
+        "status": "ok",
+        "value": {
+          "items": [
+            {
+              "pid": 1,
+              "name": "systemd",
+              "cpu_percent": 0.5,
+              "memory_rss_bytes": 1048576
+            },
+            {
+              "pid": 42,
+              "name": "bash",
+              "cpu_percent": 12.25,
+              "memory_rss_bytes": 2097152
+            }
+          ],
+          "skipped": 0
+        },
+        "partial": false
+      }
+    },
+    "meta": {
+      "dropped_since_last": 0
+    }
+  }
+}

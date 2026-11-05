@@ -38,6 +38,7 @@ const fixtures = {
     seq: 2,
     ts: 1767225602500,
     data: {
+      type: "snapshot",
       groups: {
         cpu: { status: "ok", value: { cpu_total: 12.5 }, partial: false },
         memory: { status: "ok", value: { total: 1, available: 2, used_percent: 50 }, partial: false },
@@ -51,6 +52,7 @@ const fixtures = {
     seq: 4,
     ts: 1767225604500,
     data: {
+      type: "snapshot",
       groups: { cpu: { status: "ok", value: { cpu_total: 12.5 }, partial: true } },
     },
   },
@@ -60,6 +62,7 @@ const fixtures = {
     seq: 6,
     ts: 1767225606500,
     data: {
+      type: "snapshot",
       groups: {
         cpu: { status: "unavailable", kind: "permission", reason: "proc access denied" },
         memory: { status: "ok", value: { total: 1, available: 2, used_percent: 50 }, partial: false },

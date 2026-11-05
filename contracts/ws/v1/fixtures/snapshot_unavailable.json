@@ -4,9 +4,11 @@
   "seq": 6,
   "ts": 1767225606500,
   "data": {
+    "type": "snapshot",
     "groups": {
       "cpu": { "status": "unavailable", "kind": "permission", "reason": "proc access denied" },
       "memory": { "status": "ok", "value": { "total": 1, "available": 2, "used_percent": 50.0 }, "partial": false }
-    }
+    },
+    "meta": { "dropped_since_last": 0 }
   }
 }

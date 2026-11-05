@@ -1,0 +1,29 @@
+{
+  "v": 1,
+  "type": "snapshot",
+  "seq": 1,
+  "ts": 1767225600000,
+  "data": {
+    "type": "snapshot",
+    "groups": {
+      "processes": {
+        "status": "ok",
+        "partial": false,
+        "value": {
+          "items": [
+            {
+              "pid": 7,
+              "name": "",
+              "cpu_percent": null,
+              "memory_rss_bytes": 0
+            }
+          ],
+          "skipped": 0
+        }
+      }
+    },
+    "meta": {
+      "dropped_since_last": 0
+    }
+  }
+}

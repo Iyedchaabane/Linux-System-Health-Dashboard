@@ -1,0 +1,35 @@
+{
+  "v": 1,
+  "type": "snapshot",
+  "seq": 1,
+  "ts": 1767225600000,
+  "data": {
+    "type": "snapshot",
+    "groups": {
+      "processes": {
+        "status": "ok",
+        "partial": false,
+        "value": {
+          "items": [
+            {
+              "pid": 0,
+              "name": "systemd",
+              "cpu_percent": 0.5,
+              "memory_rss_bytes": 1048576
+            },
+            {
+              "pid": 42,
+              "name": "bash",
+              "cpu_percent": 12.25,
+              "memory_rss_bytes": 2097152
+            }
+          ],
+          "skipped": 0
+        }
+      }
+    },
+    "meta": {
+      "dropped_since_last": 0
+    }
+  }
+}

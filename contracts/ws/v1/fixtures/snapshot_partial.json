@@ -4,8 +4,10 @@
   "seq": 4,
   "ts": 1767225604500,
   "data": {
+    "type": "snapshot",
     "groups": {
       "cpu": { "status": "ok", "value": { "cpu_total": 12.5 }, "partial": true }
-    }
+    },
+    "meta": { "dropped_since_last": 0 }
   }
 }

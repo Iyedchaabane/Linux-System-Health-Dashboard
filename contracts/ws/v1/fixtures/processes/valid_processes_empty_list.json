@@ -1,0 +1,22 @@
+{
+  "v": 1,
+  "type": "snapshot",
+  "seq": 1,
+  "ts": 1767225600000,
+  "data": {
+    "type": "snapshot",
+    "groups": {
+      "processes": {
+        "status": "ok",
+        "partial": false,
+        "value": {
+          "items": [],
+          "skipped": 0
+        }
+      }
+    },
+    "meta": {
+      "dropped_since_last": 0
+    }
+  }
+}

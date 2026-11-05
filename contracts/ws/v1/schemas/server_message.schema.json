@@ -71,9 +71,15 @@
     "snapshotData": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["groups"],
+      "required": ["type", "groups"],
       "properties": {
-        "groups": { "type": "object", "additionalProperties": { "$ref": "#/$defs/groupState" }, "minProperties": 1 },
+        "type": { "const": "snapshot" },
+        "groups": {
+          "type": "object",
+          "properties": { "processes": { "$ref": "#/$defs/processesState" } },
+          "additionalProperties": { "$ref": "#/$defs/groupState" },
+          "minProperties": 1
+        },
         "meta": {
           "type": "object",
           "additionalProperties": false,
@@ -91,12 +97,47 @@
         "message": { "type": "string", "minLength": 1, "maxLength": 512 }
       }
     },
-    "pingData": { "type": "object", "additionalProperties": false, "required": [], "properties": {} },
+    "pingData": { "type": "object", "additionalProperties": false, "required": [], "properties": { "type": { "const": "ping" } } },
     "byeData": {
       "type": "object",
       "additionalProperties": false,
       "required": ["reason"],
       "properties": { "reason": { "type": "string", "minLength": 1, "maxLength": 123 } }
+    },
+    "processRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pid", "name", "cpu_percent", "memory_rss_bytes"],
+      "properties": {
+        "pid": { "type": "integer", "minimum": 1 },
+        "name": { "type": "string", "maxLength": 128 },
+        "cpu_percent": { "type": ["number", "null"], "minimum": 0 },
+        "memory_rss_bytes": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "processesValue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["items", "skipped"],
+      "properties": {
+        "items": { "type": "array", "items": { "$ref": "#/$defs/processRow" } },
+        "skipped": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "processesState": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "partial", "value"],
+          "properties": {
+            "status": { "type": "string", "const": "ok" },
+            "partial": { "type": "boolean" },
+            "value": { "$ref": "#/$defs/processesValue" }
+          }
+        },
+        { "$ref": "#/$defs/groupStateUnavailable" }
+      ]
     },
     "groupState": { "oneOf": [ { "$ref": "#/$defs/groupStateOk" }, { "$ref": "#/$defs/groupStateUnavailable" } ] },
     "groupStateOk": {

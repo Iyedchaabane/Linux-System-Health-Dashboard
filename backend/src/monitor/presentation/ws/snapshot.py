@@ -2,17 +2,23 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from monitor.domain.entities import (
     CpuSnapshot,
     DiskUsage,
     MemorySnapshot,
     NetCounters,
+    ProcessList,
     SystemSnapshot,
 )
 from monitor.domain.types import MetricResult, Ok, Unavailable
 from monitor.presentation.ws.protocol import (
     GroupStateOk,
     GroupStateUnavailable,
+    ProcessesStateOk,
+    ProcessesValue,
+    ProcessRow,
     ServerMessage,
     ServerMessageType,
     SnapshotData,
@@ -110,6 +116,41 @@ def _map_network_result(result: MetricResult[NetCounters]) -> object:
     raise TypeError(f"Unsupported MetricResult: {type(result)!r}")
 
 
+def _map_processes_result(
+    result: MetricResult[ProcessList],
+) -> ProcessesStateOk | GroupStateUnavailable:
+    """Map a ProcessList MetricResult onto the WebSocket v1 processes group.
+
+    Rows keep the collector's order, cap and values: nothing is re-sorted,
+    re-truncated, renamed or clamped, and ``cpu_percent=None`` stays ``None``.
+    """
+    if isinstance(result, Ok):
+        value = result.value
+        return ProcessesStateOk(
+            status="ok",
+            partial=result.partial,
+            value=ProcessesValue(
+                items=[
+                    ProcessRow(
+                        pid=item.pid,
+                        name=item.name,
+                        cpu_percent=item.cpu_percent,
+                        memory_rss_bytes=item.memory_rss_bytes,
+                    )
+                    for item in value.items
+                ],
+                skipped=value.skipped,
+            ),
+        )
+    if isinstance(result, Unavailable):
+        return GroupStateUnavailable(
+            status="unavailable",
+            kind=result.kind,
+            reason=result.reason,
+        )
+    raise TypeError(f"Unsupported MetricResult: {type(result)!r}")
+
+
 def serialize_snapshot(snapshot: SystemSnapshot, seq: int = 0, dropped: int = 0) -> str:
     """Serialize a SystemSnapshot into a WebSocket v1 snapshot JSON string.
 
@@ -134,6 +175,15 @@ def serialize_snapshot(snapshot: SystemSnapshot, seq: int = 0, dropped: int = 0)
     if isinstance(network_state, (GroupStateOk, GroupStateUnavailable)):
         groups["network"] = network_state
 
+    # The protocol's declared group alias covers the four legacy groups only;
+    # the processes entry travels as its validated JSON shape and is checked by
+    # SnapshotGroups. Omitted entirely when the snapshot carries no result.
+    groups_payload: dict[str, Any] = dict(groups)
+    if snapshot.processes is not None:
+        groups_payload["processes"] = _map_processes_result(snapshot.processes).model_dump(
+            mode="json"
+        )
+
     ts_ms = int(snapshot.timestamp_utc.moment.timestamp() * 1000)
 
     # Use a unvalidated dict during construction to assemble the data payload
@@ -144,7 +194,7 @@ def serialize_snapshot(snapshot: SystemSnapshot, seq: int = 0, dropped: int = 0)
         ts=ts_ms,
         data=SnapshotData(
             type="snapshot",
-            groups=groups,
+            groups=groups_payload,
             meta=SnapshotMeta(dropped_since_last=dropped),
         ),
     )

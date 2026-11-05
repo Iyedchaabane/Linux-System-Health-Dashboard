@@ -1,0 +1,9 @@
+{
+  "v": 1,
+  "type": "ping",
+  "seq": 3,
+  "ts": 1000,
+  "data": {
+    "type": "ping"
+  }
+}
