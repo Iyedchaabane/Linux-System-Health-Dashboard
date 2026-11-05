@@ -92,7 +92,9 @@ async def test_normal_shutdown_closes_sampler_hub_then_adapter_once(lifecycle) -
         ("sampler.start", STARTUP + CLEANUP),
     ],
 )
-async def test_partial_startup_closes_only_initialized_resources(lifecycle, stage, expected) -> None:
+async def test_partial_startup_closes_only_initialized_resources(
+    lifecycle, stage, expected
+) -> None:
     state, _container = lifecycle
     primary = RuntimeError("startup failed")
     state.failures[stage] = primary
@@ -239,11 +241,11 @@ async def test_production_lifespan_requests_only_read_sampler_cache(
             # Nonzero collection duration places the next tick in the future.
             # Freeze there so requests cannot coincide with a scheduled sample.
             await clock.advance(0.25)
-            async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://test"
+            ) as client:
                 pending_snapshot, pending_ready = await asyncio.wait_for(
-                    asyncio.gather(
-                        client.get("/api/v1/snapshot"), client.get("/api/v1/readyz")
-                    ),
+                    asyncio.gather(client.get("/api/v1/snapshot"), client.get("/api/v1/readyz")),
                     1,
                 )
                 for response, code, message in (
@@ -266,9 +268,7 @@ async def test_production_lifespan_requests_only_read_sampler_cache(
                 assert container.sampler.latest() is snapshot
                 assert await container.snapshot_provider() is snapshot
                 ready_snapshot, ready = await asyncio.wait_for(
-                    asyncio.gather(
-                        client.get("/api/v1/snapshot"), client.get("/api/v1/readyz")
-                    ),
+                    asyncio.gather(client.get("/api/v1/snapshot"), client.get("/api/v1/readyz")),
                     1,
                 )
                 assert ready_snapshot.status_code == 200

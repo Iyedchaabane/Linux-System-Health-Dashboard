@@ -38,17 +38,19 @@ def _snapshot(*, terminal: bool = False, extra_unicode: int = 0) -> SystemSnapsh
     groups: dict[str, Any] = dict.fromkeys(GROUPS, disabled)
     if terminal:
         for name, count in zip(GROUPS, (512, 512, 71, 0, extra_unicode), strict=True):
-            groups[name] = Unavailable(
-                UnavailableKind.DISABLED, "é" * count + "x" * (512 - count)
-            )
+            groups[name] = Unavailable(UnavailableKind.DISABLED, "é" * count + "x" * (512 - count))
     else:
         lengths = [128] * 16 + [16] + [1] * 8
-        groups["processes"] = Ok(ProcessList(
-            items=tuple(ProcessInfo(pid, "p" * length, 1.0, 1)
-                        for pid, length in enumerate(lengths, start=1)),
-            skipped=0,
-            total=len(lengths),
-        ))
+        groups["processes"] = Ok(
+            ProcessList(
+                items=tuple(
+                    ProcessInfo(pid, "p" * length, 1.0, 1)
+                    for pid, length in enumerate(lengths, start=1)
+                ),
+                skipped=0,
+                total=len(lengths),
+            )
+        )
     return SystemSnapshot(
         **groups,
         timestamp_monotonic=MonotonicTimestamp(1.0),
@@ -80,9 +82,15 @@ class _ControlledHub(BroadcastHub):
 
     def __init__(self, raw: str, preceding_pings: int, drops: int) -> None:
         super().__init__()
-        ping = ServerMessage.model_validate({
-            "v": 1, "type": "ping", "seq": 0, "ts": TS, "data": {"type": "ping"},
-        }).model_dump_json()
+        ping = ServerMessage.model_validate(
+            {
+                "v": 1,
+                "type": "ping",
+                "seq": 0,
+                "ts": TS,
+                "data": {"type": "ping"},
+            }
+        ).model_dump_json()
         self.pending = deque([ping] * preceding_pings + [raw])
         self.drops = 0
         self.snapshot_drops = drops
@@ -104,7 +112,10 @@ class _ControlledHub(BroadcastHub):
 
 
 async def _websocket(
-    raw: str, preceding_pings: int, drops: int, monkeypatch: pytest.MonkeyPatch,
+    raw: str,
+    preceding_pings: int,
+    drops: int,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], int]:
     hub = _ControlledHub(raw, preceding_pings, drops)
     transport = WsTransport(hub)
@@ -138,20 +149,23 @@ async def _websocket(
     frames = [frame for frame in transport.sent if frame["type"] == "websocket.send"]
     messages = [json.loads(frame["text"]) for frame in frames]
     assert [message["type"] for message in messages[:1]] == ["hello"]
-    assert [message["seq"] for message in messages[:1 + preceding_pings]] == list(
+    assert [message["seq"] for message in messages[: 1 + preceding_pings]] == list(
         range(1 + preceding_pings)
     )
-    assert all(message["type"] == "ping" for message in messages[1:1 + preceding_pings])
+    assert all(message["type"] == "ping" for message in messages[1 : 1 + preceding_pings])
     return transport.sent, messages, outbound_instances[0]._delivered_drops
 
 
 @pytest.mark.parametrize(
     ("preceding_pings", "drops", "seq", "pre_size", "wire_size"),
-    [(0, 0, 1, 4096, 4096), (9, 0, 10, 4097, 558),
-     (0, 9, 10, 4097, 558), (0, 10, 11, 4098, 559)],
+    [(0, 0, 1, 4096, 4096), (9, 0, 10, 4097, 558), (0, 9, 10, 4097, 558), (0, 10, 11, 4098, 559)],
 )
 async def test_same_process_snapshot_rest_available_ws_envelope_can_degrade(
-    preceding_pings: int, drops: int, seq: int, pre_size: int, wire_size: int,
+    preceding_pings: int,
+    drops: int,
+    seq: int,
+    pre_size: int,
+    wire_size: int,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     snapshot = _snapshot()
@@ -175,8 +189,11 @@ async def test_same_process_snapshot_rest_available_ws_envelope_can_degrade(
     if pre_size > BUDGET:
         expected["data"]["groups"]["processes"] = DEGRADED
     assert snapshots[0] == expected
-    text = next(frame["text"] for frame in frames
-                if frame["type"] == "websocket.send" and json.loads(frame["text"])["type"] == "snapshot")
+    text = next(
+        frame["text"]
+        for frame in frames
+        if frame["type"] == "websocket.send" and json.loads(frame["text"])["type"] == "snapshot"
+    )
     assert len(text.encode("utf-8")) == wire_size <= BUDGET
     assert ServerMessage.model_validate_json(text)
     assert acknowledged == drops
@@ -185,13 +202,17 @@ async def test_same_process_snapshot_rest_available_ws_envelope_can_degrade(
     # A later REST read must still return all 25 rows with original names/values.
     again = await _rest(snapshot)
     assert again.content == rest.content
-    print(f"TRANSPORT processes seq={seq} drops={drops} canonical=4096 pre={pre_size} "
-          f"REST=200/4017 WS={wire_size}/{expected['data']['groups']['processes']['status']}")
+    print(
+        f"TRANSPORT processes seq={seq} drops={drops} canonical=4096 pre={pre_size} "
+        f"REST=200/4017 WS={wire_size}/{expected['data']['groups']['processes']['status']}"
+    )
 
 
 @pytest.mark.parametrize("extra_unicode", [0, 1])
 async def test_unavailable_unicode_boundary_rest_can_fit_while_ws_fails_closed(
-    extra_unicode: int, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture,
+    extra_unicode: int,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
 ) -> None:
     snapshot = _snapshot(terminal=True, extra_unicode=extra_unicode)
     original_domain = deepcopy(asdict(snapshot))
@@ -207,10 +228,13 @@ async def test_unavailable_unicode_boundary_rest_can_fit_while_ws_fails_closed(
     rest = await _rest(snapshot)
     if extra_unicode:
         assert rest.status_code == 503
-        assert rest.json() == {"error": {
-            "code": "INTERNAL_ERROR", "message": "Internal server error",
-            "request_id": "transport-budget-test",
-        }}
+        assert rest.json() == {
+            "error": {
+                "code": "INTERNAL_ERROR",
+                "message": "Internal server error",
+                "request_id": "transport-budget-test",
+            }
+        }
     else:
         assert rest.status_code == 200
         assert len(rest.content) == 4017 <= BUDGET
@@ -221,14 +245,15 @@ async def test_unavailable_unicode_boundary_rest_can_fit_while_ws_fails_closed(
     frames, messages, acknowledged = await _websocket(raw, 9, 0, monkeypatch)
     assert [message["type"] for message in messages] == ["hello"] + ["ping"] * 9
     assert frames[-1] == {"type": "websocket.close", "code": 1011, "reason": "Internal error"}
-    assert [record.getMessage() for record in caplog.records
-            if record.name == budget_module.__name__] == [
-        f"snapshot budget exceeded: budget={BUDGET} size={canonical_size + 1}"
-    ]
+    assert [
+        record.getMessage() for record in caplog.records if record.name == budget_module.__name__
+    ] == [f"snapshot budget exceeded: budget={BUDGET} size={canonical_size + 1}"]
     assert not [record for record in caplog.records if record.levelname in {"ERROR", "CRITICAL"}]
     assert acknowledged == 0  # No snapshot was sent, so no false delivery acknowledgement.
     assert serialize_snapshot(snapshot, seq=1) == raw
     assert asdict(snapshot) == original_domain
-    print(f"TRANSPORT unavailable canonical={canonical_size} seq=10 drops=0 "
-          f"pre={canonical_size + 1} REST={rest.status_code}/{len(rest.content)} "
-          "WS=1011/zero-snapshots")
+    print(
+        f"TRANSPORT unavailable canonical={canonical_size} seq=10 drops=0 "
+        f"pre={canonical_size + 1} REST={rest.status_code}/{len(rest.content)} "
+        "WS=1011/zero-snapshots"
+    )

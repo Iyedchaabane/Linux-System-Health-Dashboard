@@ -76,9 +76,7 @@ class _OutboundMessages:
                     message["data"]["groups"] = groups
                     return compact_json(message)
 
-                text = fit_snapshot_to_budget(
-                    message["data"]["groups"], encode, self._budget_bytes
-                )
+                text = fit_snapshot_to_budget(message["data"]["groups"], encode, self._budget_bytes)
             else:
                 text = compact_json(message)
             await asyncio.wait_for(self._ws.send_text(text), timeout=self._timeout)

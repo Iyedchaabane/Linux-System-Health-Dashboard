@@ -312,9 +312,7 @@ async def test_rest_and_websocket_degrade_the_same_groups() -> None:
     app = create_app()
     app.dependency_overrides[get_snapshot_provider] = lambda: _FixedSnapshotProvider(snapshot)
     # The route reads the budget from the container; this is the only value it needs.
-    app.state.container = SimpleNamespace(
-        settings=Settings(snapshot_size_budget_bytes=budget)
-    )
+    app.state.container = SimpleNamespace(settings=Settings(snapshot_size_budget_bytes=budget))
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.get("/api/v1/snapshot")
 

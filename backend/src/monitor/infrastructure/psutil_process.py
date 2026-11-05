@@ -16,6 +16,7 @@ from monitor.domain.types import MetricResult, Ok, Unavailable, UnavailableKind
 
 logger = logging.getLogger("monitor.infrastructure.psutil_process")
 
+
 @dataclass(frozen=True)
 class _CpuSample:
     """CPU time consumed and monotonic wall clock captured for one identity."""

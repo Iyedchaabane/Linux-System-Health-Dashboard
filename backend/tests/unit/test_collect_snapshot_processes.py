@@ -69,9 +69,7 @@ def _ok_memory() -> Ok[MemorySnapshot]:
 def _process_result() -> Ok[ProcessList]:
     return Ok(
         ProcessList(
-            items=(
-                ProcessInfo(pid=7, name="worker", cpu_percent=None, memory_rss_bytes=4096),
-            ),
+            items=(ProcessInfo(pid=7, name="worker", cpu_percent=None, memory_rss_bytes=4096),),
             skipped=0,
             total=1,
         ),

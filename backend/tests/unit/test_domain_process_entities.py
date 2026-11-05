@@ -46,7 +46,9 @@ def _valid_process(**overrides: Any) -> ProcessInfo:
         "rss_bool",
     ],
 )
-def test_process_info_rejects_invalid_values(overrides: dict[str, Any], error: type[Exception]) -> None:
+def test_process_info_rejects_invalid_values(
+    overrides: dict[str, Any], error: type[Exception]
+) -> None:
     """Every invalid row shape is rejected at construction."""
     with pytest.raises(error):
         _valid_process(**overrides)

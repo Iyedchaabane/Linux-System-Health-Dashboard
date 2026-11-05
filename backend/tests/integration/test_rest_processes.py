@@ -105,9 +105,7 @@ def _rows(count: int) -> tuple[ProcessInfo, ...]:
     )
 
 
-async def _get_snapshot(
-    snapshot: SystemSnapshot, *, budget: int | None = None
-) -> dict[str, Any]:
+async def _get_snapshot(snapshot: SystemSnapshot, *, budget: int | None = None) -> dict[str, Any]:
     app = create_app()
 
     async def provider() -> SystemSnapshot:
@@ -115,9 +113,7 @@ async def _get_snapshot(
 
     app.dependency_overrides[get_snapshot_provider] = lambda: provider
     if budget is not None:
-        app.state.container = SimpleNamespace(
-            settings=Settings(snapshot_size_budget_bytes=budget)
-        )
+        app.state.container = SimpleNamespace(settings=Settings(snapshot_size_budget_bytes=budget))
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.get("/api/v1/snapshot")
@@ -193,9 +189,7 @@ async def test_invalid_inventory_names_are_isolated_through_rest_and_ws(
     """Real collection, serialization and outbound encoding preserve healthy groups."""
     settings = Settings()
     clock = SimpleNamespace(now=100.0)
-    monkeypatch.setattr(
-        process_module, "time", SimpleNamespace(monotonic=lambda: clock.now)
-    )
+    monkeypatch.setattr(process_module, "time", SimpleNamespace(monotonic=lambda: clock.now))
     names = [" e\u0301🛠 ", "\ud800", "bad\udcffname", "a" * 127 + "\udfff", "a" * 140 + "\ud800"]
     counters = SimpleNamespace(user=10.0, system=0.0)
     inventory = {
@@ -238,7 +232,10 @@ async def test_invalid_inventory_names_are_isolated_through_rest_and_ws(
     assert await hub.connect("test-client", "test-ip", 4) is None
     try:
         outbound = _OutboundMessages(
-            socket, hub, "test-client", settings.ws_send_timeout_seconds,
+            socket,
+            hub,
+            "test-client",
+            settings.ws_send_timeout_seconds,
             budget_bytes=settings.snapshot_size_budget_bytes,
         )
         await outbound.send(raw)

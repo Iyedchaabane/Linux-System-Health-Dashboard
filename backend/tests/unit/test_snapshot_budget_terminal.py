@@ -53,7 +53,8 @@ def terminal_clock(monkeypatch: pytest.MonkeyPatch) -> list[float]:
 
     monkeypatch.setattr(budget_module, "_last_terminal_warning", None)
     monkeypatch.setattr(
-        budget_module, "time",
+        budget_module,
+        "time",
         SimpleNamespace(monotonic=lambda: clock[0], time=wall_clock_forbidden),
     )
     return clock
@@ -75,7 +76,10 @@ SIX_GENERIC_GROUPS = (*FIVE_GROUPS, "other")
     [(FIVE_GROUPS, 4096, 15806), (SIX_GENERIC_GROUPS, 16384, 18942)],
 )
 async def test_valid_budget_rejects_typed_unavailable_envelope_without_send(
-    names: tuple[str, ...], budget: int, size: int, caplog: pytest.LogCaptureFixture,
+    names: tuple[str, ...],
+    budget: int,
+    size: int,
+    caplog: pytest.LogCaptureFixture,
 ) -> None:
     caplog.set_level(logging.WARNING, logger=BUDGET_LOGGER)
     settings = Settings(snapshot_size_budget_bytes=budget)
@@ -125,12 +129,16 @@ def test_terminal_after_all_candidates_degraded_preserves_original_unavailable(
     groups = _unavailable_groups(FIVE_GROUPS)
     original = compact_json(groups)
     groups["private-group-sentinel"] = {
-        "status": "ok", "value": {"private-value-sentinel": "x" * 5000}, "partial": False,
+        "status": "ok",
+        "value": {"private-value-sentinel": "x" * 5000},
+        "partial": False,
     }
     with pytest.raises(SnapshotBudgetExceeded) as error:
         fit_snapshot_to_budget(groups, _envelope, 4096)
     assert groups.pop("private-group-sentinel") == {
-        "status": "unavailable", "kind": "transient", "reason": budget_module.DEGRADED_REASON,
+        "status": "unavailable",
+        "kind": "transient",
+        "reason": budget_module.DEGRADED_REASON,
     }
     assert compact_json(groups) == original
     records = [r for r in caplog.records if r.name == BUDGET_LOGGER]
@@ -200,7 +208,9 @@ async def test_real_endpoint_supervisor_closes_1011_and_awaits_all_tasks(
     frames = [m for m in transport.sent if m["type"] == "websocket.send"]
     assert [json.loads(m["text"])["type"] for m in frames] == ["hello"]
     assert transport.sent[-1] == {
-        "type": "websocket.close", "code": 1011, "reason": "Internal error"
+        "type": "websocket.close",
+        "code": 1011,
+        "reason": "Internal error",
     }
     assert hub.get_total_clients() == hub.get_clients_per_ip("127.0.0.1") == 0
     assert asyncio.all_tasks() == before
@@ -234,10 +244,13 @@ async def test_actual_rest_terminal_503_and_ws_share_process_wide_warning(
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.get("/api/v1/snapshot")
     assert response.status_code == 503
-    assert response.json() == {"error": {
-        "code": "INTERNAL_ERROR", "message": "Internal server error",
-        "request_id": "budget-test-request",
-    }}
+    assert response.json() == {
+        "error": {
+            "code": "INTERNAL_ERROR",
+            "message": "Internal server error",
+            "request_id": "budget-test-request",
+        }
+    }
     # A separate connection/transport in the same process shares the throttle.
     socket = _CapturingSocket()
     hub = BroadcastHub()
@@ -246,9 +259,7 @@ async def test_actual_rest_terminal_503_and_ws_share_process_wide_warning(
         await sender.send(_envelope(_unavailable_groups(FIVE_GROUPS)))
     assert socket.sent == []
     records = [r for r in caplog.records if r.name == BUDGET_LOGGER]
-    assert [r.getMessage() for r in records] == [
-        "snapshot budget exceeded: budget=4096 size=15806"
-    ]
+    assert [r.getMessage() for r in records] == ["snapshot budget exceeded: budget=4096 size=15806"]
     print("SIZE rejected actual REST canonical WS budget=4096: final=15806 status=503")
 
 
@@ -264,10 +275,13 @@ async def test_unrelated_rest_exception_remains_canonical_500() -> None:
     ) as client:
         response = await client.get("/api/v1/snapshot")
     assert response.status_code == 500
-    assert response.json() == {"error": {
-        "code": "INTERNAL_ERROR", "message": "Internal server error",
-        "request_id": "budget-test-request",
-    }}
+    assert response.json() == {
+        "error": {
+            "code": "INTERNAL_ERROR",
+            "message": "Internal server error",
+            "request_id": "budget-test-request",
+        }
+    }
 
 
 @pytest.mark.parametrize("budget", [4096, 16384])
@@ -300,7 +314,8 @@ async def test_rest_final_model_normalization_is_independently_bounded(
     assert final_size > 4096
     for name, group in groups.items():
         monkeypatch.setattr(
-            metrics, f"_map_{name}_result",
+            metrics,
+            f"_map_{name}_result",
             lambda _result, group=group: SimpleNamespace(model_dump=lambda **_kw: group),
         )
     app = _rest_app(_snapshot(1))
@@ -308,7 +323,8 @@ async def test_rest_final_model_normalization_is_independently_bounded(
         response = await client.get("/api/v1/snapshot")
     assert response.status_code == 503
     assert response.json()["error"] == {
-        "code": "INTERNAL_ERROR", "message": "Internal server error",
+        "code": "INTERNAL_ERROR",
+        "message": "Internal server error",
         "request_id": "budget-test-request",
     }
     assert [r.getMessage() for r in caplog.records if r.name == BUDGET_LOGGER] == [
@@ -318,7 +334,8 @@ async def test_rest_final_model_normalization_is_independently_bounded(
 
 
 def test_terminal_warning_first_at_zero_then_60_seconds_not_59_999(
-    terminal_clock: list[float], caplog: pytest.LogCaptureFixture,
+    terminal_clock: list[float],
+    caplog: pytest.LogCaptureFixture,
 ) -> None:
     caplog.set_level(logging.WARNING, logger=BUDGET_LOGGER)
     for now, count in [(0.0, 1), (0.0, 1), (59.999, 1), (60.0, 2)]:
@@ -328,7 +345,9 @@ def test_terminal_warning_first_at_zero_then_60_seconds_not_59_999(
         assert vars(error.value) == {"budget_bytes": 4096, "final_size_bytes": 15806}
         records = [r for r in caplog.records if r.name == BUDGET_LOGGER]
         assert len(records) == count
-        assert all(r.getMessage() == "snapshot budget exceeded: budget=4096 size=15806" for r in records)
+        assert all(
+            r.getMessage() == "snapshot budget exceeded: budget=4096 size=15806" for r in records
+        )
         assert all(r.exc_info is None for r in records)
 
 

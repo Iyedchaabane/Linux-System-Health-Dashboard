@@ -335,9 +335,7 @@ async def test_hello_and_error_messages_are_never_degraded(
     socket = _CapturingSocket()
     hub = BroadcastHub()
     assert await hub.connect("scope", "test-ip", 4) is None
-    sender = _OutboundMessages(
-        cast(WebSocket, socket), hub, "scope", timeout=1.0, budget_bytes=1
-    )
+    sender = _OutboundMessages(cast(WebSocket, socket), hub, "scope", timeout=1.0, budget_bytes=1)
     try:
         hello_raw = hub.build_hello_message()
         await sender.send(hello_raw)
@@ -368,9 +366,7 @@ async def test_guard_preserves_sequence_and_metadata(
     socket = _CapturingSocket()
     hub = BroadcastHub()
     assert await hub.connect("seq", "test-ip", 4) is None
-    sender = _OutboundMessages(
-        cast(WebSocket, socket), hub, "seq", timeout=1.0, budget_bytes=1000
-    )
+    sender = _OutboundMessages(cast(WebSocket, socket), hub, "seq", timeout=1.0, budget_bytes=1000)
     try:
         await sender.send(hub.build_hello_message())
         raw = compact_json(

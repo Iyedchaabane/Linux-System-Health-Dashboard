@@ -131,7 +131,9 @@ def test_absent_processes_result_omits_key_and_keeps_the_envelope() -> None:
     assert payload["data"]["groups"]["cpu"]["value"]["cpu_total"] == 12.5
     assert payload["data"]["groups"]["network"]["value"]["rx_bytes"] == 1000
 
-    with_processes = _serialized(_snapshot(Ok(ProcessList(items=(), skipped=0, total=0))), seq=3, dropped=2)
+    with_processes = _serialized(
+        _snapshot(Ok(ProcessList(items=(), skipped=0, total=0))), seq=3, dropped=2
+    )
 
     assert with_processes["ts"] == payload["ts"]
     assert with_processes["data"]["meta"] == payload["data"]["meta"]
@@ -165,9 +167,7 @@ def test_processes_value_accepts_total_equal_to_and_above_items() -> None:
         {"items": [], "skipped": 0, "total": -1},
         {"items": [], "skipped": 0, "total": True},
         {
-            "items": [
-                {"pid": 1, "name": "p", "cpu_percent": None, "memory_rss_bytes": 0}
-            ],
+            "items": [{"pid": 1, "name": "p", "cpu_percent": None, "memory_rss_bytes": 0}],
             "skipped": 0,
             "total": 0,
         },
@@ -183,6 +183,4 @@ def test_processes_value_rejects_invalid_total(payload: dict[str, Any]) -> None:
 def test_processes_value_still_forbids_unknown_fields() -> None:
     """The added field did not relax the model's strict extra-field policy."""
     with pytest.raises(ValidationError):
-        ProcessesValue.model_validate(
-            {"items": [], "skipped": 0, "total": 0, "unexpected": 1}
-        )
+        ProcessesValue.model_validate({"items": [], "skipped": 0, "total": 0, "unexpected": 1})

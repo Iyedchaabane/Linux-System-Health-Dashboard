@@ -92,7 +92,9 @@ async def test_concurrent_reads_submit_once_and_recover_after_completion(executo
         await asyncio.gather(first, return_exceptions=True)
 
 
-async def test_cancelled_waiter_retains_flight_and_never_replays_abandoned_result(executors) -> None:
+async def test_cancelled_waiter_retains_flight_and_never_replays_abandoned_result(
+    executors,
+) -> None:
     reader = PsutilProcessReader()
     waiter = asyncio.create_task(reader.read())
     started = asyncio.Event()

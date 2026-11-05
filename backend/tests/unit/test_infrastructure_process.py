@@ -93,9 +93,7 @@ def _use_clock(monkeypatch: pytest.MonkeyPatch, clock: FakeMonotonic) -> None:
     monkeypatch.setattr(process_module, "time", SimpleNamespace(monotonic=clock.monotonic))
 
 
-def _use_processes(
-    monkeypatch: pytest.MonkeyPatch, processes: list[FakeProcess]
-) -> None:
+def _use_processes(monkeypatch: pytest.MonkeyPatch, processes: list[FakeProcess]) -> None:
     monkeypatch.setattr(psutil, "process_iter", lambda: list(processes))
     by_pid = {process.pid: process for process in processes}
     monkeypatch.setattr(psutil, "Process", lambda pid: by_pid[pid])
@@ -236,7 +234,14 @@ async def test_retained_baselines_only_cover_the_current_sample(
         _process(1, status_value=psutil.STATUS_ZOMBIE),
         _process(1, name_value=""),
     ],
-    ids=["no_such_process", "zombie_process", "access_denied", "os_error", "zombie_status", "empty_name"],
+    ids=[
+        "no_such_process",
+        "zombie_process",
+        "access_denied",
+        "os_error",
+        "zombie_status",
+        "empty_name",
+    ],
 )
 async def test_unreadable_process_is_skipped_not_listed(
     monkeypatch: pytest.MonkeyPatch, process: FakeProcess
@@ -452,7 +457,12 @@ async def test_identity_change_during_observation_skips_and_drops_baseline(
 @pytest.mark.parametrize("failure_call", [1, 2], ids=["initial_lookup", "postread_recheck"])
 @pytest.mark.parametrize(
     "error",
-    [psutil.NoSuchProcess(500), psutil.AccessDenied(500), psutil.ZombieProcess(500), OSError("gone")],
+    [
+        psutil.NoSuchProcess(500),
+        psutil.AccessDenied(500),
+        psutil.ZombieProcess(500),
+        OSError("gone"),
+    ],
     ids=["gone", "denied", "zombie", "oserror"],
 )
 async def test_fresh_lookup_failure_safely_skips(
@@ -482,8 +492,14 @@ async def test_fresh_lookup_failure_safely_skips(
     assert reader._previous == {}
 
 
-@pytest.mark.parametrize("surrogate", ["\ud800", "\udfff", "\udcff"], ids=["high", "low", "surrogateescape"])
-@pytest.mark.parametrize("prefix_length", [0, 3, 127, 128, 140], ids=["short", "embedded", "boundary", "after128", "suffix"])
+@pytest.mark.parametrize(
+    "surrogate", ["\ud800", "\udfff", "\udcff"], ids=["high", "low", "surrogateescape"]
+)
+@pytest.mark.parametrize(
+    "prefix_length",
+    [0, 3, 127, 128, 140],
+    ids=["short", "embedded", "boundary", "after128", "suffix"],
+)
 async def test_invalid_full_name_is_skipped_before_truncation(
     monkeypatch: pytest.MonkeyPatch, surrogate: str, prefix_length: int
 ) -> None:
