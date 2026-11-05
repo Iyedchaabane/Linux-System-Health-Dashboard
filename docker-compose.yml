@@ -7,7 +7,10 @@ services:
       MONITOR_ENVIRONMENT: production
       UV_CACHE_DIR: /tmp/uv-cache
       MONITOR_HOST: 0.0.0.0
+      MONITOR_PROCESS_PROCFS_PATH: /host/proc
       MONITOR_ALLOWED_ORIGINS: '["http://127.0.0.1:8099","http://localhost:8099","http://127.0.0.1","http://localhost"]'
+    volumes:
+      - /proc:/host/proc:ro
     expose:
       - "8080"
     healthcheck:
