@@ -42,3 +42,30 @@ a:focus-visible, button:focus-visible, summary:focus-visible, [tabindex]:focus-v
 button, summary { min-height: calc(var(--space-12) - var(--space-1)); }
 
 .overview-metric { height: 100%; min-height: calc(var(--space-16) * 5); }
+
+/* Themed scrollbar for the process table region only; tokens resolve per theme. */
+.process-table-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(var(--color-muted)) rgb(var(--color-surface-alt));
+}
+
+/* Chromium/WebKit flavor; Firefox keeps `scrollbar-color` (no thumb hover there). */
+.process-table-scroll::-webkit-scrollbar {
+  width: var(--space-2);
+  height: var(--space-2);
+}
+.process-table-scroll::-webkit-scrollbar-track {
+  background-color: rgb(var(--color-surface-alt));
+}
+.process-table-scroll::-webkit-scrollbar-thumb {
+  border-radius: var(--radius-sm);
+  background-color: rgb(var(--color-muted));
+}
+.process-table-scroll::-webkit-scrollbar-thumb:hover {
+  /* Muted mixed toward the theme text color: lighter in dark, darker in light. */
+  background-color: color-mix(
+    in srgb,
+    rgb(var(--color-muted)) 85%,
+    rgb(var(--color-text))
+  );
+}

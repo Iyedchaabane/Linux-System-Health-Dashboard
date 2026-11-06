@@ -10,7 +10,7 @@ import { ProcessIcon } from "../processIcons";
 export function ProcessTable({ items }: { items: ProcessRow[] }) {
   return (
     <div
-      className="max-h-80 overflow-auto rounded-sm"
+      className="process-table-scroll max-h-80 overflow-auto rounded-sm"
       role="region"
       aria-label="Running processes table"
       tabIndex={0} // eslint-disable-line jsx-a11y/no-noninteractive-tabindex -- Keyboard-scrollable region.
