@@ -1,181 +1,306 @@
 # Linux System Health Dashboard
 
-Read-only, real-time dashboard for Linux host health. A FastAPI backend samples
-CPU and memory (plus wired disk and network collectors), publishes JSON
-snapshots over WebSocket, and the React frontend renders responsive cards,
-history charts, and connection state.
+**Real-time, read-only Linux host monitoring with FastAPI, React, WebSockets, and Docker.**
 
-> **Current phase:** backend + frontend foundations are integrated. Live
-> WebSocket end-to-end under Playwright remains blocked by a known E2E
-> frontend-proxy origin issue (see Limitations).
+Monitor CPU, memory, storage, network activity, and running processes from a responsive dashboard with live charts, light/dark themes, and recognizable application icons. A single backend sampler collects system snapshots and publishes them to the browser approximately once per second.
 
-## Features
+![Linux System Health Dashboard — dark overview with live metrics and running processes](docs/images/dashboard-overview-dark.png)
 
-- Exposes CPU total/per-core, load average, core count, frequency, plus memory
-  total/available/used percent and swap.
-- Disk usage (device/total/used/percent) and network cumulative byte counters
-  are collected and wired through REST/WebSocket (frontend cards display live).
-- Single background sampler; REST and WebSocket serve cached/broadcast data.
-- Honest states: `ok`, `partial`, `unavailable`, `stale`, `disconnected`,
-  `error`, `loading` — never `0` or last-known-as-fresh.
-- Read-only API. Binds to `127.0.0.1` by default; configurable allowed origins.
-- 92.97 % backend test coverage (strict mypy + Ruff + import-linter).
+> **Status:** Working end-to-end in Docker. Live browser verification confirmed correct process icons, streaming updates, and no console or failed-network requests in the tested session. This is a local monitoring tool, not a hosted multi-user observability service.
+
+## Highlights
+
+- **Live monitoring:** CPU utilization, core count and frequency; memory and swap; disk usage; network receive/transmit rates; and top running processes.
+- **Real-time delivery:** WebSocket snapshots using a versioned protocol, with a REST endpoint for the latest snapshot.
+- **Process visibility:** PID, name, CPU percentage, and resident memory (RSS), ordered by CPU on the server; up to 25 rows displayed by default.
+- **61 application icons:** Local assets with exact-name matching for 130 process aliases, plus a neutral icon for unknown processes. No runtime third-party icon service.
+- **History charts:** Recent samples for CPU, memory, disk, and network, with responsive layouts.
+- **Honest status handling:** Loading, partial, unavailable, stale, disconnected, and error states instead of misleading zero values.
+- **Light and dark themes:** Accessible status labels and theme-aware visualizations.
+- **Containerized deployment:** Docker Compose with Nginx serving the frontend and proxying API/WebSocket traffic.
+- **Automated validation:** Backend and frontend checks plus Docker image builds in GitHub Actions.
+
+## Screenshots
+
+<details>
+<summary><strong>Light theme — full dashboard</strong></summary>
+
+![Linux System Health Dashboard — light overview](docs/images/dashboard-overview-light.png)
+
+</details>
+
+### Network monitoring
+
+![Live download and upload charts in dark mode](docs/images/network-monitoring-dark.png)
+
+> Screenshots show actual readings from a test Linux host. Values vary with workload and sampling time. Temperature readings are unavailable in the currently tested connection.
 
 ## Architecture
 
-- Backend slice: `domain -> application -> presentation` + `infrastructure`,
-  composition root in `backend/src/monitor/composition.py`.
-- One sampler (`application/sampler.py`) produces snapshots. REST reads from
-  sampler.latest(); WS hub consumes them.
-- Frontend slice: `domain / infrastructure / application / presentation`
-  with theme tokens, Zod schemas, Zustand store, Recharts.
-- Shared contract in `contracts/ws/v1/{PROTOCOL.md,schemas,fixtures}`.
+```mermaid
+flowchart TB
+    HOST["Linux host: CPU, memory, disks, network, /proc"]
 
-## Stack
+    subgraph BACKEND["FastAPI backend · Python"]
+        READERS["psutil and procfs adapters"]
+        COLLECT["CollectSnapshot use case"]
+        SAMPLER["Single periodic sampler"]
+        LATEST["Latest snapshot in memory"]
+        HUB["WebSocket broadcast hub"]
+        REST["GET /api/v1/snapshot"]
+        WS["/ws/v1/metrics · monitor.v1"]
+        READERS --> COLLECT --> SAMPLER
+        SAMPLER --> LATEST --> REST
+        SAMPLER --> HUB --> WS
+    end
 
-Backend: Python 3.11–3.13, FastAPI, uvicorn[standard], psutil, pydantic v2,
-pydantic-settings, pytest/pytest-asyncio/hypothesis/ruff/mypy.
-Frontend: React 18, TypeScript 5, Vite 6, Tailwind 3, Recharts, Zustand, Zod,
-Vitest, Playwright.
+    subgraph FRONTEND["Frontend container"]
+        NGINX["Nginx: static files and reverse proxy"]
+    end
 
-## Prerequisites
-- Python 3.11+ and `uv`.
-- Node 20.19+ (or 22.12+), `npm`.
-- Linux host (collectors use psutil and Linux interfaces).
+    subgraph BROWSER["Web browser"]
+        UI["React · TypeScript · Zustand · Recharts"]
+        ICONS["61 bundled process icons"]
+        ICONS --> UI
+    end
 
-## Local development
+    HOST --> READERS
+    NGINX -->|"Serve dashboard and assets"| UI
+    UI -->|"REST /api/"| NGINX
+    UI <-->|"WebSocket /ws/"| NGINX
+    NGINX -->|"Proxy REST"| REST
+    NGINX <-->|"Proxy WebSocket"| WS
+```
 
-Backend:
+**How it works:** The backend reads Linux metrics through `psutil` and procfs adapters. `CollectSnapshot` assembles a snapshot; a single periodic sampler distributes it to an in-memory latest-value cache and WebSocket clients. The React UI receives updates through Nginx, which also serves the compiled frontend and local icon assets. REST requests use the latest available snapshot rather than initiating a separate sampling loop.
+
+**Process namespace:** Docker Compose mounts `/proc` read-only as `/host/proc` for process enumeration. This improves host-process visibility but does **not** make all metrics host-wide or cgroup-aware; see [Limitations](#limitations).
+
+### Code organization
+
+| Layer | Responsibility |
+|---|---|
+| `backend/src/monitor/domain/` | Domain types, results, and reader interfaces |
+| `backend/src/monitor/application/` | Snapshot collection, sampling, and application ports |
+| `backend/src/monitor/infrastructure/` | Linux/psutil/procfs readers and system adapters |
+| `backend/src/monitor/presentation/` | FastAPI REST endpoints and WebSocket delivery |
+| `backend/src/monitor/composition.py` | Dependency wiring |
+| `frontend/src/` | React application, domain/application/infrastructure/presentation slices |
+| `contracts/ws/v1/` | Shared versioned WebSocket protocol, schemas, and fixtures |
+
+## Technology stack
+
+| Area | Technologies |
+|---|---|
+| Backend | Python 3.11–3.13, FastAPI, Uvicorn, Pydantic v2, psutil |
+| Frontend | React 18, TypeScript 5, Vite 6, Tailwind CSS 3 |
+| State and charts | Zustand, Zod, Recharts |
+| Live transport | WebSocket; JSON protocol `monitor.v1` |
+| Deployment | Docker Compose, Nginx |
+| Backend quality | pytest, pytest-asyncio, Hypothesis, Ruff, strict mypy, import-linter |
+| Frontend quality | Vitest, Playwright, TypeScript, ESLint |
+| CI | GitHub Actions: backend, frontend, Docker build |
+
+## Getting started
+
+### Requirements
+
+- Linux host
+- Docker Engine and Docker Compose v2 for the simplest setup
+- For development without Docker: Python 3.11+, [`uv`](https://docs.astral.sh/uv/), Node.js 20.19+ or 22.12+, and npm
+
+### Option A — Docker Compose (recommended)
+
+From the repository root:
+
+```bash
+./start.sh
+```
+
+The supplied Compose configuration binds the dashboard to **http://127.0.0.1:8099** on the host. The backend listens inside the Compose network; Nginx proxies browser REST and WebSocket requests to it.
+
+Alternatively, manage the stack directly:
+
+```bash
+docker compose up --build -d
+docker compose ps
+docker compose logs -f
+docker compose down
+```
+
+> **Security:** The provided Compose setup is designed for local, trusted use. Do not expose the dashboard or host `/proc` metadata to untrusted networks without adding appropriate access controls.
+
+### Option B — Local development
+
+Start the backend in one terminal:
+
 ```bash
 cd backend
 uv sync
-# Run in dev mode
 uv run uvicorn monitor.presentation.api.app:create_app --factory --reload --port 8080
 ```
 
-Frontend:
+Start the frontend in another terminal:
+
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-Vite dev server proxies `/api` and `/ws` to `http://127.0.0.1:8080`.
+Vite proxies `/api` and `/ws` to `http://127.0.0.1:8080`. Use the local URL printed by Vite to open the dashboard.
 
-## Environment variables (prefix `MONITOR_`)
-- `MONITOR_HOST` / `MONITOR_PORT` / `MONITOR_WORKERS`
-- `MONITOR_SAMPLE_INTERVAL_SECONDS` (1.0..10.0)
-- `MONITOR_MAX_WS_CLIENTS`, `MONITOR_WS_QUEUE_SIZE`, `MONITOR_WS_SEND_TIMEOUT_SECONDS`
-- `MONITOR_ALLOWED_ORIGINS` (list; required non-empty when `MONITOR_ENVIRONMENT=production`)
-- `MONITOR_ENVIRONMENT` (`development`/`testing`/`production`)
-- `MONITOR_DOCS_ENABLED`, `MONITOR_LOG_LEVEL`, `MONITOR_LOG_JSON`
-- plus history/process/payload limits listed in `backend/src/monitor/config/settings.py`.
+## Monitoring features
 
-Settings default `host=127.0.0.1`; override to `0.0.0.0` only with reverse proxy.
+| Section | What it shows |
+|---|---|
+| Overview | Live CPU, memory, disk, and network summaries; history; top processes; availability states |
+| CPU | Total utilization, core information, and recent CPU history |
+| Memory | Utilization, used/total capacity, and recent history |
+| Network | Download and upload rates with receive/transmit history |
+| Disks | Storage utilization, used/total capacity, and history |
+| Running processes | Up to 25 CPU-ranked processes, PID, CPU, RSS, and recognized app icons |
 
-## Commands
+Process rows reflect the **server-provided ordering**; client-side sorting and filtering controls are not part of the current v1 UI. Unknown process names intentionally use a neutral icon.
 
-Backend (from `backend/`):
+### Application icons
+
+The process icon registry contains **61 application identities and 130 exact aliases**. Icons are shipped as separate local assets and loaded when rendered; no icon discovery scans the host filesystem and no external icon API is contacted. The registry uses case-normalized exact matching, including selected Linux process-name truncations, to avoid false positives.
+
+Asset provenance, attribution, license conditions, and trademark caveats are documented in [`frontend/src/assets/process-icons/README.md`](frontend/src/assets/process-icons/README.md) and [`frontend/public/THIRD_PARTY_NOTICES.txt`](frontend/public/THIRD_PARTY_NOTICES.txt).
+
+## REST and WebSocket API
+
+### REST
+
+```http
+GET /api/v1/snapshot
+```
+
+Returns the most recently available system snapshot. The backend also provides a health endpoint used by the Compose healthcheck:
+
+```http
+GET /api/v1/healthz
+```
+
+### WebSocket
+
+```text
+/ws/v1/metrics
+Subprotocol: monitor.v1
+```
+
+Messages use the versioned envelope:
+
+```json
+{
+  "v": 1,
+  "type": "snapshot",
+  "seq": 42,
+  "ts": "<ISO-8601 timestamp>",
+  "data": {}
+}
+```
+
+The example illustrates the envelope shape; `data` is abbreviated, not a complete snapshot payload. The protocol defines server messages such as `hello`, `snapshot`, `error`, `ping`, and `bye`, and client messages such as `subscribe`, `ping`, and `pong`.
+
+For authoritative message shapes, validation rules, and close codes, see [`contracts/ws/v1/PROTOCOL.md`](contracts/ws/v1/PROTOCOL.md).
+
+## Configuration
+
+Backend settings use the `MONITOR_` environment-variable prefix. Relevant options include:
+
+| Variable | Purpose |
+|---|---|
+| `MONITOR_HOST` / `MONITOR_PORT` | Backend bind address and port |
+| `MONITOR_ENVIRONMENT` | `development`, `testing`, or `production` |
+| `MONITOR_SAMPLE_INTERVAL_SECONDS` | Sampling interval (1–10 seconds) |
+| `MONITOR_ALLOWED_ORIGINS` | Browser origin allowlist |
+| `MONITOR_PROCESS_PROCFS_PATH` | procfs path used for process enumeration |
+| `MONITOR_MAX_WS_CLIENTS` | WebSocket client limit |
+| `MONITOR_WS_QUEUE_SIZE` | Per-client outbound queue capacity |
+| `MONITOR_LOG_LEVEL` / `MONITOR_LOG_JSON` | Logging configuration |
+
+See [`backend/src/monitor/config/settings.py`](backend/src/monitor/config/settings.py) for the complete supported configuration and validation rules.
+
+By default, the backend binds to `127.0.0.1`; the Compose setup explicitly binds it to `0.0.0.0` **inside the container** so Nginx can reach it. Production configuration requires explicit allowed origins.
+
+## Testing and quality
+
+Run backend checks from `backend/`:
+
 ```bash
 uv run pytest
-uv run ruff check . && uv run ruff format --check .
+uv run ruff check .
+uv run ruff format --check .
 uv run mypy --strict src
 uv run lint-imports
 ```
 
-Makefile targets (from repo root):
-```bash
-make check        # all fast checks
-make test         # pytest (default tier)
-make lint && make typecheck && make arch
-make test-all     # backend + frontend tests
-```
+Run frontend checks from `frontend/`:
 
-Frontend:
 ```bash
-npm run dev
+npm run typecheck
+npm run lint
+npx vitest run
 npm run build
-npm run test
-npm run typecheck && npm run lint
 ```
 
-E2E:
-```bash
-npm run test:e2e     # not in package.json; run: npx playwright test
-```
-
-## WebSocket Protocol
-- Endpoint: `/ws/v1/metrics`, subprotocol `monitor.v1`
-- Messages: envelope `{v,type,seq,ts,data}`. Types: `hello`, `snapshot`, `error`, `ping`, `bye` (server→client); `subscribe`, `pong`, `ping`.
-- Close codes: 1000, 1001, 1008, 1009, 1011, 1013, 4400, 4401, 4429.
-- Full specification: `contracts/ws/v1/PROTOCOL.md`. A rest endpoint exists at `GET /api/v1/snapshot`.
-
-## Quick Start
+For browser E2E testing, run the project's Playwright suite using its configured environment:
 
 ```bash
-./start.sh
+cd frontend
+npx playwright test
 ```
 
-Additional Makefile commands:
-- `make up`, `make down`, `make restart`, `make logs`, `make status`, `make build`, `make test`, `make lint`, `make clean`.
+### Latest reported verification
 
-## Security
-- Default bind `127.0.0.1`, no wildcard CORS.
-- Origin check on WS; empty allowlist rejects browser-origin upgrades (non-browser tooling still allowed).
-- Production env (`MONITOR_ENVIRONMENT=production`) requires explicit non-wildcard `allowed_origins`.
-- Read-only API (no host mutation).
-- Errors never emit stack traces or internal paths.
+- **Frontend:** 313 Vitest tests passed; typecheck, lint, and production build passed during the 61-icon milestone.
+- **Live Docker/Chromium check:** WebSocket updates approximately once per second; tested process icons matched running processes; no browser console errors or failed requests in the observed session.
+- **Icon assets:** All 61 bundled application assets decoded in the asset-rendering check; unknown processes retained the neutral fallback.
+- **GitHub Actions:** The reported push workflow completed successfully with backend, frontend, and Docker build jobs passing.
 
-## Current Limitations
-- History tracked in memory (1-hour 1s) for scalar series; no per-client backlog replay.
-- No authentication (out of scope for v1); runs as an unprivileged user.
-- Only CPU, memory, disk, and network (cumulative) metrics implemented; additional metrics are future phases.
+These results describe specific verification runs, not a guarantee for every Linux distribution or browser. The full live E2E check did not launch every supported application.
 
-## Project Structure
+## Security and privacy
+
+- Read-only monitoring endpoints; the dashboard does not manage or terminate processes.
+- Localhost binding for the published frontend port in the provided Compose file.
+- Configurable allowed origins and WebSocket origin validation.
+- No command-line arguments or environment variables collected for the process table.
+- Host process metadata can still be sensitive; the read-only `/proc` mount is **not** a confidentiality boundary.
+- No built-in user authentication in v1. Deploy only in a trusted environment unless additional authentication and network controls are provided.
+
+## Limitations
+
+- The dashboard is designed primarily for **one trusted Linux host**, not a distributed multi-host monitoring platform.
+- CPU/memory values are based on the collector's available host/container view, not a guaranteed cgroup-accounting model.
+- Process enumeration may be partial because of permissions, disappearing processes, or procfs visibility; the UI reports partial/unavailable states.
+- Recent scalar history is held in memory; there is no persistent time-series database or per-client backlog replay.
+- Temperature sensor data is not supplied in the tested deployment, so the UI reports it as unavailable rather than inventing a reading.
+- The process table displays the server's top-N ordering; client-side sorting/filtering is not implemented in v1.
+- Some bundled application artwork has attribution, trademark, conditional-use, or repository-level licensing caveats; consult the third-party notices before redistribution.
+
+## Repository layout
+
+```text
+.
+├── backend/                 # FastAPI backend and Linux collectors
+├── frontend/                # React UI and bundled process icons
+├── contracts/ws/v1/         # Versioned WebSocket schemas and protocol
+├── deploy/                  # Dockerfiles and Nginx configuration
+├── docs/
+│   ├── design-system/
+│   └── images/              # README screenshots
+├── .github/workflows/       # CI workflows
+├── docker-compose.yml
+├── Makefile
+├── start.sh
+└── README.md
 ```
-backend/src/monitor/{domain,application,infrastructure,presentation,config,composition.py}
-contracts/ws/v1/{schemas,fixtures,PROTOCOL.md}
-frontend/src/{domain,infrastructure,application,presentation,app}
-tests, e2e, docs/design-system
-```
 
-## T2 Status — Running Processes Monitoring
+## License and attribution
 
-**Status:** PASS WITH NOTES
+A repository-level software license was **not present in the reviewed tree**. Do not assume the project source is licensed for reuse without an explicit license file.
 
-### Implemented functionality
-- Linux process collector (PID, name, CPU percent and RSS); default `process_procfs_path=/proc` reflects the current PID namespace. Compose uses `MONITOR_PROCESS_PROCFS_PATH=/host/proc` with the read-only mount `/proc:/host/proc:ro` for host-process visibility.
-- Process group present in shared REST and WebSocket snapshots (`groups.processes`); the dashboard shows at most the existing top 25 processes by CPU, with unknown CPU values last.
-- Backend, WebSocket envelope and Zod schema agreed on process row shape, partial/unavailable status and bounds.
-- Frontend process panel and table with honest Loading/Unavailable/Stale/Partial states; no client-side truncation or fabrication.
-
-### Verification evidence
-Re-verified on the current tree.
-- Backend: 358 tests passed, coverage 92.97% (threshold 85%), Ruff check, mypy strict and import-linter clean.
-- Frontend: 271 tests passed; typecheck, lint and build clean.
-- Browser (isolated Playwright/Chromium): 6 smoke passed + 3 controlled recovery passed; no console errors, no failed REST requests; responsive checks passed.
-- Docker: backend and frontend isolated builds passed; REST/WebSocket (hello + snapshot) and schema validation passed; proper desktop/mobile checks.
-
-### Known limitations (not resolved)
-- Host-process visibility does not guarantee host-wide scope for all metrics: CPU/memory retain their native psutil view, not cgroup-limit accounting.
-- Read-only host procfs is not a confidentiality boundary: process metadata remains exposed, although the adapter collects no command lines or environment variables. Mount it only into a trusted backend; permissions and UID/ptrace restrictions limit reads but do not eliminate metadata exposure.
-- Frontend container has no explicit healthcheck.
-- Backend `Dockerfile` installs `uv` without a pinned version.
-- Nginx master starts as root (workers run as `nginx`).
-- Allowed-origin policy could be narrowed (port-less localhost origins are currently accepted).
-
-### Deferred technical debt (needs approval before work starts)
-- Pin `uv` version in backend image for reproducibility.
-- Narrow acceptable production origins to only configured ports.
-- Add frontend container healthcheck.
-- Harden/restrict Nginx root-master behavior.
-- Broader browser coverage for stale-state suppression and missing process data.
-
-No claim of host-wide monitoring is made.
-
-## License
-License file not present (TBD). All code is project-controlled; do not assume an open-source license without confirmation.
-
-## Related Docs
-- Ops: `AGENTS.md`
-- Phase map: `.opencode/commands/start-phase.md`
+Third-party icon assets have separate licensing and trademark considerations. See the [icon provenance documentation](frontend/src/assets/process-icons/README.md) and [third-party notices](frontend/public/THIRD_PARTY_NOTICES.txt).

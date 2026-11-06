@@ -95,6 +95,7 @@ graphify-out/
 docs/design-system/dashboard-brief.md
 docs/design-system/dashboard-current.png
 docs/design-system/dashboard-target.png
+docs/architecture/system-architecture.svg
 
 #codex
 .codex/*
