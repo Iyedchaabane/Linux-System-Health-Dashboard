@@ -1,5 +1,6 @@
 import { formatBytes, formatPercent } from "../../domain/format";
 import type { ProcessRow } from "../../domain/types";
+import { ProcessIcon } from "../processIcons";
 
 /**
  * Compact process table. Renders every row the payload contains, exactly in
@@ -46,10 +47,18 @@ export function ProcessTable({ items }: { items: ProcessRow[] }) {
             <tr key={row.pid} className="border-b border-border-subtle">
               <th
                 scope="row"
-                className="truncate py-1 pr-2 text-left font-mono font-normal text-text"
+                className="py-1 pr-2 text-left font-mono font-normal text-text"
                 title={row.name === "" ? "Unnamed process" : row.name}
               >
-                {row.name === "" ? "Unnamed process" : row.name}
+                <span className="inline-flex max-w-full min-w-0 items-center gap-2">
+                  <ProcessIcon
+                    name={row.name === "" ? "Unnamed process" : row.name}
+                    className="h-4 w-4 shrink-0"
+                  />
+                  <span className="min-w-0 truncate">
+                    {row.name === "" ? "Unnamed process" : row.name}
+                  </span>
+                </span>
               </th>
               <td className="whitespace-nowrap py-1 pr-2 text-right tabular-nums text-text">
                 {row.cpu_percent === null
