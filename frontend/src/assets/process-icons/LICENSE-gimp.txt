@@ -1,0 +1,7 @@
+GIMP logo - Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
+License: https://creativecommons.org/licenses/by-sa/4.0/
+Attribution: GIMP project
+Source: https://gitlab.gnome.org/GNOME/gimp-data/-/blob/e62f1905dcef7ec831ea6c052bb035eb37eaa69e/images/logo/gimp-logo-unicolor.svg
+Modification: root fill brand colour added; geometry unchanged.
+
+The modified asset remains under CC BY-SA 4.0. If you share it, you must give appropriate credit, provide a link to the license, and indicate changes; adaptations must be shared under the same license.

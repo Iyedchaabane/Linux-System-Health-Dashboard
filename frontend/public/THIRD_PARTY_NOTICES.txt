@@ -1,0 +1,753 @@
+THIRD-PARTY NOTICES
+===================
+
+This build includes the following third-party logo assets. Trademark rights are
+separate from the copyright licences below and are not granted by them. No
+unverified logo is bundled.
+
+1. Font Awesome Free 6.7.2
+--------------------------
+
+Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com -
+License: https://fontawesome.com/license/free
+(Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT)
+
+Icons copyright (c) 2024 Fonticons, Inc.
+Icons license: Creative Commons Attribution 4.0 International (CC BY 4.0)
+https://creativecommons.org/licenses/by/4.0/
+
+Pinned source:
+https://github.com/FortAwesome/Font-Awesome/tree/840c215f894f429b26b8c1402a65da835dc5a450/svgs/brands
+
+Bundled icon slugs: firefox-browser, brave, chrome, edge, opera, docker,
+node-js, python, java, spotify, discord, slack, telegram, whatsapp, github
+(bundled as GitHub Desktop), steam, signal-messenger, jenkins.
+
+Modification: root fill brand colour added; geometry unchanged. The upstream
+attribution comment inside each SVG is preserved.
+
+Trademark notice: Font Awesome and the names and logos of the applications
+represented are trademarks of their respective owners. CC BY 4.0 grants
+copyright permissions only; it does not grant trademark rights or imply
+endorsement.
+
+2. Vivaldi logo
+---------------
+
+License: Creative Commons Attribution 4.0 International (CC BY 4.0)
+https://creativecommons.org/licenses/by/4.0/
+
+Credit: Vivaldi Technologies
+Source: https://vivaldi.com/press
+Modification: root fill brand colour added; geometry unchanged.
+
+Trademark notice: Vivaldi and the Vivaldi logo are trademarks of Vivaldi
+Technologies. The CC BY 4.0 license grants copyright permissions only; the
+press page states logos are subject to trademark restrictions, and no
+endorsement is implied.
+
+3. Inkscape logo
+----------------
+
+License: Creative Commons Attribution-ShareAlike 3.0 Unported (CC BY-SA 3.0)
+https://creativecommons.org/licenses/by-sa/3.0/
+
+Attribution: Inkscape project
+Source: https://inkscape.org/gallery/=inkscape-branding/inkscape-brand-assets/
+Modification: root fill brand colour added; geometry unchanged.
+
+The modified asset remains under CC BY-SA 3.0. Sharing it requires appropriate
+credit, a link to the license and an indication of changes; adaptations must be
+shared under the same license. No trademark rights are granted.
+
+4. Apache NetBeans logo
+-----------------------
+
+Attribution: The Apache Software Foundation
+Source: https://apache.org/logos
+Modification: root fill brand colour added; geometry unchanged.
+
+Trademark notice: Apache, NetBeans and the Apache feather are trademarks of
+The Apache Software Foundation. The Apache License grants copyright permissions
+only; it does not grant trademark rights or imply endorsement.
+
+Apache License
+Version 2.0, January 2004
+http://www.apache.org/licenses/
+
+
+                                 Apache License
+                           Version 2.0, January 2004
+                        http://www.apache.org/licenses/
+
+   TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
+
+   1. Definitions.
+
+      "License" shall mean the terms and conditions for use, reproduction,
+      and distribution as defined by Sections 1 through 9 of this document.
+
+      "Licensor" shall mean the copyright owner or entity authorized by
+      the copyright owner that is granting the License.
+
+      "Legal Entity" shall mean the union of the acting entity and all
+      other entities that control, are controlled by, or are under common
+      control with that entity. For the purposes of this definition,
+      "control" means (i) the power, direct or indirect, to cause the
+      direction or management of such entity, whether by contract or
+      otherwise, or (ii) ownership of fifty percent (50%) or more of the
+      outstanding shares, or (iii) beneficial ownership of such entity.
+
+      "You" (or "Your") shall mean an individual or Legal Entity
+      exercising permissions granted by this License.
+
+      "Source" form shall mean the preferred form for making modifications,
+      including but not limited to software source code, documentation
+      source, and configuration files.
+
+      "Object" form shall mean any form resulting from mechanical
+      transformation or translation of a Source form, including but
+      not limited to compiled object code, generated documentation,
+      and conversions to other media types.
+
+      "Work" shall mean the work of authorship, whether in Source or
+      Object form, made available under the License, as indicated by a
+      copyright notice that is included in or attached to the work
+      (an example is provided in the Appendix below).
+
+      "Derivative Works" shall mean any work, whether in Source or Object
+      form, that is based on (or derived from) the Work and for which the
+      editorial revisions, annotations, elaborations, or other modifications
+      represent, as a whole, an original work of authorship. For the purposes
+      of this License, Derivative Works shall not include works that remain
+      separable from, or merely link (or bind by name) to the interfaces of,
+      the Work and Derivative Works thereof.
+
+      "Contribution" shall mean any work of authorship, including
+      the original version of the Work and any modifications or additions
+      to that Work or Derivative Works thereof, that is intentionally
+      submitted to Licensor for inclusion in the Work by the copyright owner
+      or by an individual or Legal Entity authorized to submit on behalf of
+      the copyright owner. For the purposes of this definition, "submitted"
+      means any form of electronic, verbal, or written communication sent
+      to the Licensor or its representatives, including but not limited to
+      communication on electronic mailing lists, source code control systems,
+      and issue tracking systems that are managed by, or on behalf of, the
+      Licensor for the purpose of discussing and improving the Work, but
+      excluding communication that is conspicuously marked or otherwise
+      designated in writing by the copyright owner as "Not a Contribution."
+
+      "Contributor" shall mean Licensor and any individual or Legal Entity
+      on behalf of whom a Contribution has been received by Licensor and
+      subsequently incorporated within the Work.
+
+   2. Grant of Copyright License. Subject to the terms and conditions of
+      this License, each Contributor hereby grants to You a perpetual,
+      worldwide, non-exclusive, no-charge, royalty-free, irrevocable
+      copyright license to reproduce, prepare Derivative Works of,
+      publicly display, publicly perform, sublicense, and distribute the
+      Work and such Derivative Works in Source or Object form.
+
+   3. Grant of Patent License. Subject to the terms and conditions of
+      this License, each Contributor hereby grants to You a perpetual,
+      worldwide, non-exclusive, no-charge, royalty-free, irrevocable
+      (except as stated in this section) patent license to make, have made,
+      use, offer to sell, sell, import, and otherwise transfer the Work,
+      where such license applies only to those patent claims licensable
+      by such Contributor that are necessarily infringed by their
+      Contribution(s) alone or by combination of their Contribution(s)
+      with the Work to which such Contribution(s) was submitted. If You
+      institute patent litigation against any entity (including a
+      cross-claim or counterclaim in a lawsuit) alleging that the Work
+      or a Contribution incorporated within the Work constitutes direct
+      or contributory patent infringement, then any patent licenses
+      granted to You under this License for that Work shall terminate
+      as of the date such litigation is filed.
+
+   4. Redistribution. You may reproduce and distribute copies of the
+      Work or Derivative Works thereof in any medium, with or without
+      modifications, and in Source or Object form, provided that You
+      meet the following conditions:
+
+      (a) You must give any other recipients of the Work or
+          Derivative Works a copy of this License; and
+
+      (b) You must cause any modified files to carry prominent notices
+          stating that You changed the files; and
+
+      (c) You must retain, in the Source form of any Derivative Works
+          that You distribute, all copyright, patent, trademark, and
+          attribution notices from the Source form of the Work,
+          excluding those notices that do not pertain to any part of
+          the Derivative Works; and
+
+      (d) If the Work includes a "NOTICE" text file as part of its
+          distribution, then any Derivative Works that You distribute must
+          include a readable copy of the attribution notices contained
+          within such NOTICE file, excluding those notices that do not
+          pertain to any part of the Derivative Works, in at least one
+          of the following places: within a NOTICE text file distributed
+          as part of the Derivative Works; within the Source form or
+          documentation, if provided along with the Derivative Works; or,
+          within a display generated by the Derivative Works, if and
+          wherever such third-party notices normally appear. The contents
+          of the NOTICE file are for informational purposes only and
+          do not modify the License. You may add Your own attribution
+          notices within Derivative Works that You distribute, alongside
+          or as an addendum to the NOTICE text from the Work, provided
+          that such additional attribution notices cannot be construed
+          as modifying the License.
+
+      You may add Your own copyright statement to Your modifications and
+      may provide additional or different license terms and conditions
+      for use, reproduction, or distribution of Your modifications, or
+      for any such Derivative Works as a whole, provided Your use,
+      reproduction, and distribution of the Work otherwise complies with
+      the conditions stated in this License.
+
+   5. Submission of Contributions. Unless You explicitly state otherwise,
+      any Contribution intentionally submitted for inclusion in the Work
+      by You to the Licensor shall be under the terms and conditions of
+      this License, without any additional terms or conditions.
+      Notwithstanding the above, nothing herein shall supersede or modify
+      the terms of any separate license agreement you may have executed
+      with Licensor regarding such Contributions.
+
+   6. Trademarks. This License does not grant permission to use the trade
+      names, trademarks, service marks, or product names of the Licensor,
+      except as required for reasonable and customary use in describing the
+      origin of the Work and reproducing the content of the NOTICE file.
+
+   7. Disclaimer of Warranty. Unless required by applicable law or
+      agreed to in writing, Licensor provides the Work (and each
+      Contributor provides its Contributions) on an "AS IS" BASIS,
+      WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+      implied, including, without limitation, any warranties or conditions
+      of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A
+      PARTICULAR PURPOSE. You are solely responsible for determining the
+      appropriateness of using or redistributing the Work and assume any
+      risks associated with Your exercise of permissions under this License.
+
+   8. Limitation of Liability. In no event and under no legal theory,
+      whether in tort (including negligence), contract, or otherwise,
+      unless required by applicable law (such as deliberate and grossly
+      negligent acts) or agreed to in writing, shall any Contributor be
+      liable to You for damages, including any direct, indirect, special,
+      incidental, or consequential damages of any character arising as a
+      result of this License or out of the use or inability to use the
+      Work (including but not limited to damages for loss of goodwill,
+      work stoppage, computer failure or malfunction, or any and all
+      other commercial damages or losses), even if such Contributor
+      has been advised of the possibility of such damages.
+
+   9. Accepting Warranty or Additional Liability. While redistributing
+      the Work or Derivative Works thereof, You may choose to offer,
+      and charge a fee for, acceptance of support, warranty, indemnity,
+      or other liability obligations and/or rights consistent with this
+      License. However, in accepting such obligations, You may act only
+      on Your own behalf and on Your sole responsibility, not on behalf
+      of any other Contributor, and only if You agree to indemnify,
+      defend, and hold each Contributor harmless for any liability
+      incurred by, or claims asserted against, such Contributor by reason
+      of your accepting any such warranty or additional liability.
+
+   END OF TERMS AND CONDITIONS
+
+   APPENDIX: How to apply the Apache License to your work.
+
+      To apply the Apache License to your work, attach the following
+      boilerplate notice, with the fields enclosed by brackets "[]"
+      replaced with your own identifying information. (Don't include
+      the brackets!)  The text should be enclosed in the appropriate
+      comment syntax for the file format. We also recommend that a
+      file or class name and description of purpose be included on the
+      same "printed page" as the copyright notice for easier
+      identification within third-party archives.
+
+   Copyright [yyyy] [name of copyright owner]
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+
+5. GIMP logo
+------------
+
+License: Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
+https://creativecommons.org/licenses/by-sa/4.0/
+
+Attribution: GIMP project
+Source: https://gitlab.gnome.org/GNOME/gimp-data/-/blob/e62f1905dcef7ec831ea6c052bb035eb37eaa69e/images/logo/gimp-logo-unicolor.svg
+Modification: root fill brand colour added; geometry unchanged.
+
+The modified asset remains under CC BY-SA 4.0. Sharing it requires appropriate
+credit, a link to the license and an indication of changes; adaptations must be
+shared under the same license. No trademark rights are granted.
+
+6. Git logo
+-----------
+
+Git Logo by Jason Long is licensed under the Creative Commons Attribution 3.0
+Unported License.
+
+Title: Git logo
+Source: https://git-scm.com/images/logos/downloads/Git-Icon-Black.svg
+Modification: none.
+
+License: https://creativecommons.org/licenses/by/3.0/
+
+Trademark notice: Git is a trademark of Software Freedom Conservancy. The CC BY
+license grants copyright permissions only; it does not grant trademark rights
+or imply endorsement.
+
+7. VSCodium logo
+----------------
+
+Source: https://github.com/VSCodium/vscodium
+        (path: icons/stable/codium_cnl.svg, commit
+        5e26c4a9c475ebf59052c2da916b80d471af739f)
+Source file: https://raw.githubusercontent.com/VSCodium/vscodium/5e26c4a9c475ebf59052c2da916b80d471af739f/icons/stable/codium_cnl.svg
+Modification: XML declaration and external-DTD DOCTYPE removed; geometry and gradient unchanged.
+
+MIT License
+
+Copyright (c) 2018-present The VSCodium contributors
+Copyright (c) 2018-present Peter Squicciarini
+Copyright (c) 2015-present Microsoft Corporation
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+Trademark notice: VSCodium marks belong to their respective owners. The MIT
+license covers copyright only; it does not grant trademark rights or imply
+endorsement.
+
+8. Wikimedia Commons public-domain-tagged logos
+-----------------------------------------------
+
+File-specific licence metadata recorded on each Commons file page; a tag is not
+a legal clearance and does not address trademark rights. Unless stated, the
+asset is unmodified and geometry is unchanged. "Revid" is the permanent Commons
+file revision identifier.
+
+chromium.svg
+  Attribution: The Chromium Authors / Google
+  Source: https://commons.wikimedia.org/wiki/File:Chromium_Logo.svg
+  Revision: revid 1207739646
+  Modification: none.
+  Licence tag: PD-textlogo (below the threshold of originality).
+
+vscode.svg
+  Attribution: Microsoft
+  Source: https://commons.wikimedia.org/wiki/File:Visual_Studio_Code_1.35_icon.svg
+  Revision: revid 1082378456
+  Modification: none.
+  Licence tag: PD-shape.
+
+mysql.svg
+  Attribution: Oracle Corporation
+  Source: https://commons.wikimedia.org/wiki/File:MySQL_textlogo.svg
+  Revision: revid 1016341408
+  Modification: none (wordmark).
+  Licence tag: PD-textlogo.
+
+redis.svg
+  Attribution: Redis Ltd
+  Source: https://commons.wikimedia.org/wiki/File:Redis_logo.svg
+  Revision: revid 1274416148
+  Modification: none (wordmark).
+  Licence tag: PD-textlogo.
+
+postman.png
+  Attribution: Postman, Inc.
+  Source: https://commons.wikimedia.org/wiki/File:Postman_(software).png
+  Revision: revid 1088854200
+  Modification: downscaled from 659x200 to 256x78.
+  Licence tag: PD-textlogo.
+
+intellij.png
+  Attribution: JetBrains
+  Source: https://commons.wikimedia.org/wiki/File:IntelliJ_IDEA_Icon.svg
+  Revision: revid 1104075656
+  Modification: 960 px raster render downscaled to 256 px.
+  Licence tag: PD-textlogo.
+
+teams.svg
+  Attribution: Microsoft
+  Source: https://commons.wikimedia.org/wiki/File:Microsoft_Office_Teams_(2025%E2%80%93present).svg
+  Revision: revid 1259002657
+  Modification: none.
+  Licence tag: PD-textlogo.
+
+pycharm.svg
+  Attribution: JetBrains
+  Source: https://commons.wikimedia.org/wiki/File:PyCharm_Icon.svg
+  Revision: revid 725398577
+  Modification: none.
+  Licence tag: PD-textlogo.
+
+webstorm.png
+  Attribution: JetBrains
+  Source: https://commons.wikimedia.org/wiki/File:WebStorm_Icon.svg
+  Revision: revid 1008636300
+  Modification: 960 px raster render downscaled to 256 px.
+  Licence tag: PD-textlogo.
+
+android-studio.png
+  Attribution: Google
+  Source: https://commons.wikimedia.org/wiki/File:Android_Studio_Logo_(2023).svg
+  Revision: revid 1220366636
+  Modification: 960 px raster render downscaled to 256 px.
+  Licence tag: PD-textlogo.
+
+virtualbox.svg
+  Attribution: Oracle VirtualBox
+  Source: https://commons.wikimedia.org/wiki/File:VirtualBox_2024_Logo.svg
+  Revision: revid 1103776088
+  Modification: none.
+  Licence tag: PD-textlogo.
+
+kubernetes.svg
+  Attribution: Google, Inc.
+  Source: https://commons.wikimedia.org/wiki/File:Kubernetes_logo_without_workmark.svg
+  Revision: revid 1291255072
+  Modification: none.
+  Licence tag: PD-logo.
+
+chatgpt.svg
+  Attribution: OpenAI
+  Source: https://commons.wikimedia.org/wiki/File:ChatGPT-Logo.svg
+  Revision: revid 1253678087
+  Modification: none.
+  Licence tag: PD-simple.
+
+Trademark notice: Chromium, Visual Studio Code, MySQL, Redis, Postman, IntelliJ
+IDEA, Microsoft Teams, PyCharm, WebStorm, Android Studio, VirtualBox,
+Kubernetes, ChatGPT and their logos are trademarks of their respective owners.
+Public-domain copyright status grants no trademark rights and implies no
+endorsement, sponsorship or affiliation.
+
+9. CC0 1.0
+----------
+
+zoom.png
+  Attribution: Ghostw7856 (Commons uploader)
+  Source: https://commons.wikimedia.org/wiki/File:Zoom_meeting_app_icon.png
+  Revision: revid 1259296218
+  Modification: downscaled from 512 px to 256 px.
+  Licence: Creative Commons CC0 1.0 Universal
+  https://creativecommons.org/publicdomain/zero/1.0/
+  Obligations: none required by CC0; the credit above is retained voluntarily.
+
+kdenlive.png
+  Attribution: Kdenlive
+  Source: https://commons.wikimedia.org/wiki/File:Kdenlive-logo.svg
+  Revision: revid 1016443346
+  Modification: 960 px raster render downscaled to 256x192.
+  Licence: CC0 1.0 Universal (same URL as above).
+
+Trademark notice: Zoom and Kdenlive and their logos are trademarks of their
+respective owners. CC0 waives copyright and related rights only; it grants no
+trademark rights and implies no endorsement.
+
+10. CC BY 2.5
+-------------
+
+krita.png
+  Attribution: KOffice Team
+  Source: https://commons.wikimedia.org/wiki/File:Krita_Application_Logo.svg
+  Revision: revid 1215238824
+  Modification: 960 px raster render downscaled to 188x256.
+  Licence: Creative Commons Attribution 2.5
+  https://creativecommons.org/licenses/by/2.5/
+  Obligations: credit the author, link the licence and indicate changes.
+
+Trademark notice: Krita and the Krita logo are trademarks of the Krita
+Foundation. The CC BY licence grants copyright permissions only; it does not
+grant trademark rights or imply endorsement.
+
+11. CC BY-SA 3.0
+----------------
+
+mongodb.svg
+  Attribution: Fabián Alexis (Antu icon set)
+  Source: https://commons.wikimedia.org/wiki/File:Antu_mongodb.svg
+  Revision: revid 1274486419
+  Modification: none.
+  Note: community/third-party artwork (Antu icon set), not an official project
+  logo.
+  Licence: Creative Commons Attribution-ShareAlike 3.0 Unported
+  https://creativecommons.org/licenses/by-sa/3.0/
+
+eclipse.png
+  Attribution: User:Eduemoni (Commons)
+  Source: https://commons.wikimedia.org/wiki/File:Eclipse-SVG.svg
+  Revision: revid 978508658
+  Modification: 960 px raster render downscaled to 256 px.
+  Note: community/third-party artwork (Commons user drawing), not an official
+  project logo.
+  Licence: CC BY-SA 3.0 (same URL as above).
+
+Obligations: credit, link the licence, indicate changes, and share adaptations
+under the same licence.
+
+Trademark notice: MongoDB and Eclipse are trademarks of their respective owners.
+CC BY-SA grants copyright permissions only; it does not grant trademark rights
+or imply endorsement.
+
+12. MPL-2.0
+----------
+
+libreoffice.png
+  Attribution: Galdam Jitsu (Geeko)
+  Source: https://commons.wikimedia.org/wiki/File:LibreOffice_7.5_Main_Icon.svg
+  Revision: revid 1091663302
+  Modification: 960 px raster render downscaled to 256 px.
+  Licence: Mozilla Public License 2.0
+  https://mozilla.org/MPL/2.0/
+  Obligations: source availability for MPL-covered files and retention of
+  notices.
+
+thunderbird.png
+  Attribution: Mozilla Foundation
+  Source: https://commons.wikimedia.org/wiki/File:Mozilla_Thunderbird_logo.png
+  Revision: revid 762405301
+  Modification: downscaled from 512 px to 256 px.
+  Licence: MPL-2.0 (same URL as above).
+
+Trademark notice: LibreOffice and Thunderbird and their logos are trademarks of
+their respective owners. The MPL grants copyright permissions only; it does not
+grant trademark rights or imply endorsement.
+
+13. GPL-2.0 / GPL (as tagged on the file page)
+----------------------------------------------
+
+Unless stated, "GPL" reproduces the licence tag on the Commons file page and no
+version was asserted there beyond that tag.
+
+gnome-terminal.png
+  Attribution: Jakub Steiner (jimmac)
+  Source: https://commons.wikimedia.org/wiki/File:GNOME_Terminal_icon_2019.svg
+  Revision: revid 1264922384
+  Modification: 960 px raster render downscaled to 256 px.
+  Licence: GPL-3.0 (dual GPLv3 / GFDL-1.3 as tagged).
+  Licence URL: https://www.gnu.org/licenses/gpl-3.0.html
+
+nautilus.png
+  Attribution: Ulisse Perusin
+  Source: https://commons.wikimedia.org/wiki/File:Nautilus_icon.svg
+  Revision: revid 1117282381
+  Modification: 960 px raster render downscaled to 256 px.
+  Licence: GPL-2.0 only.
+  Licence URL: https://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+
+evince.png
+  Attribution: Jakub Steiner
+  Source: https://commons.wikimedia.org/wiki/File:Evince_logo_2011.svg
+  Revision: revid 1218952497
+  Modification: 960 px raster render downscaled to 256 px.
+  Licence: GPL (as tagged).
+  Licence URL: https://www.gnu.org/licenses/gpl-2.0.html
+
+vlc.svg
+  Attribution: Richard C. G. Øiestad
+  Source: https://commons.wikimedia.org/wiki/File:VLC_Icon.svg
+  Revision: revid 1252262404
+  Modification: none.
+  Licence: GPL (as tagged). Licence URL as above.
+
+obs.svg
+  Attribution: Hugh "Jim" Bailey
+  Source: https://commons.wikimedia.org/wiki/File:OBS_Studio_Logo.svg
+  Revision: revid 1173968490
+  Modification: none.
+  Licence: GPL-2.0 (also tagged PD-logo). Licence URL as above.
+
+audacity.png
+  Attribution: Audacity
+  Source: https://commons.wikimedia.org/wiki/File:Audacity_Logo_Plain.svg
+  Revision: revid 1068775185
+  Modification: 960 px raster render downscaled to 256x240.
+  Licence: GPL (as tagged). Licence URL as above.
+
+filezilla.svg
+  Attribution: eeme158 team / FileZilla
+  Source: https://commons.wikimedia.org/wiki/File:FileZilla_logo.svg
+  Revision: revid 1252670970
+  Modification: none.
+  Licence: GPL (as tagged). Licence URL as above.
+
+mongodb-compass.png
+  Attribution: BigLinux contributors
+  Source: https://commons.wikimedia.org/wiki/File:Biglinux-Icons_%E2%80%93_mongodb-compass.svg
+  Revision: revid 1208009554
+  Modification: 960 px raster render downscaled to 256 px.
+  Note: community/third-party artwork (BigLinux icon set), not an official
+  project logo.
+  Licence: GPL-3.0. Licence URL: https://www.gnu.org/licenses/gpl-3.0.html
+
+qemu.svg
+  Attribution: QEMU contributors
+  Source: https://github.com/qemu/qemu/blob/f71afb409a87c4ecd0f9d63a5963eb645dfab780/ui/icons/qemu.svg
+  Revision: commit f71afb409a87c4ecd0f9d63a5963eb645dfab780
+  Modification: none.
+  Evidence: repository-level GPL-2.0 at the pinned commit; no separate per-file
+  logo licence found.
+  Licence: GPL-2.0. Licence URL: https://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+
+zed.png
+  Attribution: Zed Industries
+  Source: https://commons.wikimedia.org/wiki/File:Zed_Editor_Logo.png
+  Revision: revid 1253681587
+  Modification: 960 px raster render downscaled to 256 px.
+  Licence: GPL (as tagged). Licence URL as above.
+
+Obligations: retain copyright notices, provide the applicable licence text and
+make the corresponding source available. This project distributes these logo
+files only; the pinned source URL above identifies the exact source revision.
+
+Trademark notice: GNOME, Nautilus, Evince, VLC, OBS Studio, Audacity, FileZilla,
+MongoDB Compass, QEMU, Zed and their logos are trademarks of their respective
+owners. The GPL grants copyright permissions only; it does not grant trademark
+rights or imply endorsement.
+
+14. Apache-2.0 (Insomnia, DBeaver)
+---------------------------------
+
+insomnia.svg
+  Attribution: Kong Inc. / Insomnia contributors
+  Source: https://github.com/Kong/insomnia/blob/54e46851ff4a4ca8a357e351ef8bed713ceda42a/packages/insomnia/src/ui/images/insomnia-logo.svg
+  Revision: commit 54e46851ff4a4ca8a357e351ef8bed713ceda42a
+  Modification: none.
+  Evidence: repository-level Apache-2.0 at the pinned commit; no separate
+  per-file logo licence found.
+  Licence: Apache License 2.0. The full text is reproduced in section 4.
+
+dbeaver.svg
+  Attribution: Serge Rider / DBeaver developers
+  Source: https://commons.wikimedia.org/wiki/File:DBeaver_logo.svg
+  Revision: revid 1016334304
+  Modification: none.
+  Licence: Apache-2.0 (same licence and full text as section 4).
+
+Obligations: retain notices and state changes. Trademark notice: Insomnia and
+DBeaver and their logos are trademarks of their respective owners. The Apache
+License grants copyright permissions only; it does not grant trademark rights
+or imply endorsement.
+
+15. PostgreSQL / BSD
+--------------------
+
+postgresql.svg
+  Attribution: Daniel Lundin; PostgreSQL Global Development Group
+  Source: https://commons.wikimedia.org/wiki/File:Postgresql_elephant.svg
+  Revision: revid 1260167757
+  Modification: none.
+  Licence: The PostgreSQL Licence (BSD-style)
+  https://www.postgresql.org/about/licence/
+
+pgadmin.png
+  Attribution: pgAdmin Development Team
+  Source: https://github.com/pgadmin-org/pgadmin4/blob/d9647f93f022681b43ef6039290c800da45fa5d7/web/pgadmin/static/img/logo-128.png
+  Revision: commit d9647f93f022681b43ef6039290c800da45fa5d7
+  Modification: none (128x128 PNG).
+  Evidence: repository-level PostgreSQL licence at the pinned commit; no
+  separate per-file logo licence found.
+  Licence: PostgreSQL licence (same URL as above).
+
+Trademark notice: PostgreSQL, the PostgreSQL elephant and pgAdmin are trademarks
+of their respective owners. The PostgreSQL licence grants copyright permissions
+only; it does not grant trademark rights or imply endorsement.
+
+16. MIT (Ollama, OpenCode)
+--------------------------
+
+ollama.svg
+  Attribution: ParthSareen / Ollama
+  Source: https://commons.wikimedia.org/wiki/File:Ollama-logo.svg
+  Revision: revid 1222804376
+  Modification: none.
+  Copyright: Copyright (c) 2023 Ollama
+  Licence: MIT. The full MIT text is reproduced in section 7.
+
+opencode.svg
+  Attribution: OpenCode contributors
+  Source: https://github.com/sst/opencode/blob/72da577c0bb01115e3603ed7655637e9f560d816/packages/console/app/src/asset/brand/opencode-logo-light-square.svg
+  Revision: commit 72da577c0bb01115e3603ed7655637e9f560d816
+  Modification: none.
+  Evidence: repository-level MIT at the pinned commit; no separate per-file
+  logo licence found.
+  Copyright: Copyright (c) 2025 opencode
+  Licence: MIT (same licence and full text as section 7).
+
+Copyright lines retained under MIT, in addition to the attribution above:
+Copyright (c) 2023 Ollama, and Copyright (c) 2025 opencode from the
+sst/opencode LICENSE at commit 72da577c0bb01115e3603ed7655637e9f560d816.
+
+Obligations: retain the copyright and permission notice. Trademark notice:
+Ollama and OpenCode and their logos are trademarks of their respective owners.
+The MIT licence grants copyright permissions only; it does not grant trademark
+rights or imply endorsement.
+
+17. Blender logo (conditional permission)
+-----------------------------------------
+
+Asset: blender.png
+  Attribution: Blender Foundation
+  Source: https://www.blender.org/about/logo/
+  Official logo kit: https://download.blender.org/branding/blender_logo_kit.zip
+  Kit SHA-256:
+  61d79b4c71264709a3d8dad2628e77eb4179cda99bf63125bcc1e4dd7261e35d
+  Modification: official blender_icon_512x512.png downscaled to 256 px.
+
+The Blender logo is the property of the Blender Foundation and was obtained
+from the official Blender logo kit. Third-party use is permitted only to
+identify or credit Blender, for example to show that this dashboard can display
+Blender processes. It is a secondary brand use, not a primary or product brand,
+and it must not imply endorsement, sponsorship or affiliation by the Blender
+Foundation. The Blender logo is not licensed under the GPL or under any Creative
+Commons licence; use is governed by the Blender Foundation's conditional logo
+usage guidelines.
+
+Trademark notice: Blender and the Blender logo are trademarks of the Blender
+Foundation. The conditional permission grants no ownership, no general
+endorsement and no rights beyond identification or credit.
+
+18. Trademark notice
+--------------------
+
+The copyright licences and permissions above grant no trademark rights. All
+product names, logos and marks are the property of their respective owners.
+Their use here does not imply endorsement, sponsorship or affiliation.
+
+19. Bundled assets and fallback
+-------------------------------
+
+All 61 known application identities are bundled with a local, licensed logo;
+there is no neutral fallback for a known app. The neutral Lucide AppWindow icon
+is used only when a process name matches no registry alias at all. No unverified
+logo is bundled, and the file-specific licence metadata above is not a claim of
+legal clearance.
